@@ -10,3 +10,5 @@ python-jose[cryptography]
 passlib[bcrypt]
 pytest
 httpx
+gunicorn
+uvicorn[standard]
