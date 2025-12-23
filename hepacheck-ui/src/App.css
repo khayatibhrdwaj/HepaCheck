@@ -1,0 +1,604 @@
+/* =========================
+   Global theme + resets
+   ========================= */
+:root {
+  --hc-bg: #ffffff;
+  --hc-text: #000000;       /* black text */
+  --hc-border: #000000;     /* black outlines */
+  --hc-muted: #757575;
+  --hc-focus: #1a73e8;
+  --hc-shadow: 0 4px 16px rgba(0,0,0,0.08);
+
+  /* Nav colors */
+  --nav-default: #f4c39f;   /* unselected button */
+  --nav-active:  #853b35;   /* selected button */
+  --nav-bar:     #b5e27b;   /* ribbon background */
+
+  /* Header sizing (prevents white gap between header and ribbon) */
+  --logo-h: 96px;           /* logo image height */
+  --header-vpad: 24px;      /* total vertical padding (16 + 8) */
+  --header-h: calc(var(--logo-h) + var(--header-vpad));
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--hc-bg);
+  color: var(--hc-text);
+}
+
+body {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  line-height: 1.45;
+}
+
+/* Headings use Merriweather (load via index.html) */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Merriweather", serif;
+  margin: 0.5rem 0 0.6rem;
+  color: var(--hc-text);
+}
+
+/* Links */
+a { color: var(--hc-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Keyboard focus */
+:focus-visible {
+  outline: 3px solid var(--hc-focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+
+/* =========================
+   Header (logo) + alignment
+   ========================= */
+.app-header {
+  border-bottom: 1px solid var(--hc-border);
+  background: var(--hc-bg);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.header-inner,
+.nav-inner {
+  max-width: 1200px;      /* match content width */
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+.header-inner {
+  justify-content: flex-start;         /* logo starts at left edge */
+  padding: 16px 12px 8px;              /* 16 top, 8 bottom */
+}
+
+.app-logo {
+  height: var(--logo-h);
+  max-width: 92vw;
+  object-fit: contain;
+  line-height: 0;
+  cursor: pointer;
+}
+
+
+/* =========================
+   Role navigation bar (green ribbon)
+   ========================= */
+.role-navbar {
+  background: var(--nav-bar);
+  border-bottom: 1px solid var(--hc-border);
+  position: sticky;
+  top: var(--header-h);               /* sit flush below header */
+  z-index: 15;
+  padding: 0;                         /* padding moved to .nav-inner */
+  margin: 0;
+}
+
+.nav-inner {
+  justify-content: flex-start;        /* buttons start under logo */
+  gap: 16px;
+  padding: 10px 12px;
+}
+
+.role-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* thin divider before Logout */
+.nav-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--hc-border);
+  opacity: 0.3;
+  margin: 0 4px 0 2px;
+}
+
+/* Nav buttons – NOT selected */
+.role-nav-btn {
+  display: inline-block;
+  padding: 12px 18px;
+  border: 1px solid var(--hc-border);
+  border-radius: 12px;
+  background: var(--nav-default);   /* #f4c39f */
+  color: #000;
+  font-weight: 600;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  transition: transform 0.06s ease, box-shadow 0.12s ease;
+  box-shadow: none;
+}
+.role-nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--hc-shadow);
+}
+.role-nav-btn:active { transform: translateY(0); box-shadow: none; }
+
+/* Nav buttons – SELECTED / active */
+.role-nav-btn[aria-current="page"] {
+  background: var(--nav-active);     /* #853b35 */
+  color: #fff;
+  border-width: 2px;
+  border-color: var(--hc-border);
+  outline: 2px solid var(--hc-border);
+}
+
+/* Logout stays red */
+.role-nav-btn.logout-btn {
+  background: #b22222;
+  color: #fff;
+}
+.role-nav-btn.logout-btn:hover {
+  background: #8b0000;
+  transform: translateY(-1px);
+  box-shadow: var(--hc-shadow);
+}
+.role-nav-btn.logout-btn:active { transform: translateY(0); box-shadow: none; }
+
+
+/* =========================
+   Page shell / cards / tables
+   ========================= */
+.main-shell {
+  max-width: 1200px;
+  margin: 16px auto;
+  padding: 12px;
+}
+
+.card {
+  border: 1px solid var(--hc-border);
+  border-radius: 14px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: var(--hc-shadow);
+}
+
+.section-title {
+  font-family: "Merriweather", serif;
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.table th, .table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--hc-border);
+}
+.table th {
+  background: #fff5f5;
+  text-align: left;
+  font-weight: 700;
+}
+
+
+/* =========================
+   Inputs & generic buttons
+   ========================= */
+.input, .select, .textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--hc-text);
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.btn {
+  padding: 10px 16px;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--hc-text);
+  font-weight: 600;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.06s ease, box-shadow 0.12s ease;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--hc-shadow); }
+.btn:active { transform: translateY(0); box-shadow: none; }
+
+
+/* =========================
+   Form blocks: green container, white inputs
+   ========================= */
+.form-card {
+  background: #d7fbd4 !important;   /* green form background */
+  color: #000 !important;
+  border: 1px solid var(--hc-border);
+}
+.form-card .input,
+.form-card input,
+.form-card select,
+.form-card textarea {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* Buttons INSIDE form blocks → refresh color */
+.form-card button,
+.form-card .btn,
+.form-card .role-nav-btn,
+.form-card input[type="button"],
+.form-card input[type="submit"] {
+  background: #fae1cf !important;  /* refresh color */
+  color: #000 !important;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  padding: 10px 16px;
+  transition: transform 0.06s ease, box-shadow 0.12s ease;
+}
+.form-card button:hover,
+.form-card .btn:hover,
+.form-card .role-nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--hc-shadow);
+}
+.form-card button:active,
+.form-card .btn:active,
+.form-card .role-nav-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+
+/* =========================
+   Reports page specifics
+   ========================= */
+.reports-page .table th {
+  background: #d1edad !important; /* requested header green */
+  color: #000 !important;
+}
+
+.reports-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 10px 0 12px;
+}
+.reports-actions .role-nav-btn {
+  padding: 11px 16px; /* slightly smaller than nav buttons */
+  border-radius: 10px;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.btn-refresh {
+  background: #fae1cf;
+  color: #000;
+  border: 1px solid var(--hc-border);
+}
+.btn-refresh:hover { filter: brightness(0.98); }
+
+.btn-clear {
+  background: #b22222;
+  color: #fff;
+  border: 1px solid var(--hc-border);
+}
+.btn-clear:hover { background: #8b0000; }
+
+
+/* =========================
+   Patient scores: risk badge & chart
+   ========================= */
+.patient-dashboard label { color: #000 !important; font-weight: 600; }
+
+.patient-dashboard input,
+.patient-dashboard select,
+.patient-dashboard textarea {
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid var(--hc-border) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.score-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 10px 0 6px;
+}
+
+.risk-line {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.25rem;
+}
+.risk-label { font-weight: 700; }
+.risk-badge {
+  padding: 6px 12px;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  background: #ffffff;
+  color: #b00000; /* red text when unknown */
+}
+.risk-badge.risk-high   { background: #8b0000; color: #ffffff; }
+.risk-badge.risk-medium { background: #b8860b; color: #ffffff; }
+.risk-badge.risk-low    { background: #2e7d32; color: #ffffff; }
+
+.chart-card {
+  background: #fff !important;
+  border: 1px solid var(--hc-border);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+
+/* =========================
+   Filter tabs (Appointments & Emergency Flag)
+   ========================= */
+.filter-tab {
+  background: #fae1cf;        /* default (unselected) */
+  color: #000;
+  border: 1px solid var(--hc-border);
+  border-radius: 10px;
+  font-weight: 600;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  padding: 10px 16px;
+  transition: transform 0.06s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+.filter-tab.is-active {
+  background: #914f49;        /* selected */
+  color: #fff;                /* white text when selected */
+  border-width: 2px;
+  outline: 2px solid var(--hc-border);
+}
+.filter-tab:hover { transform: translateY(-1px); box-shadow: var(--hc-shadow); }
+.filter-tab:active { transform: translateY(0); box-shadow: none; }
+.filter-tab:focus-visible {
+  outline: 3px solid var(--hc-focus);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+
+/* =========================
+   Utilities
+   ========================= */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+
+/* =========================
+   Responsive tweaks
+   ========================= */
+@media (max-width: 980px) {
+  :root { --logo-h: 84px; }
+  .role-nav-center { gap: 12px; }
+  .role-nav-btn { padding: 10px 14px; border-radius: 10px; }
+}
+
+@media (max-width: 780px) {
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .role-navbar { width: 100%; }  /* now not empty */
+  .nav-inner { gap: 12px; justify-content: flex-start; }
+  .role-nav-center { flex-wrap: wrap; }
+  .main-shell { padding: 10px; margin: 12px auto; }
+  .nav-sep { display: none; }
+}
+
+
+/* Role badge (Patient / Doctor) — slightly smaller than the logo */
+.role-badge {
+  height: calc(var(--logo-h) - 12px);   /* a bit smaller than the logo */
+  margin-left: 12px;
+  max-width: 45vw;
+  object-fit: contain;
+  display: block;
+  align-self: center;
+}
+
+/* Optional: fine-tune on smaller screens (logo height already shrinks via --logo-h) */
+@media (max-width: 980px) {
+  .role-badge { height: calc(var(--logo-h) - 10px); }
+}
+@media (max-width: 720px) {
+  .role-badge { height: calc(var(--logo-h) - 8px); }
+}
+
+/* Make the Patient/Doctor badge noticeably smaller than the logo */
+:root { --badge-scale: .35; } /* 65% of logo height on desktop */
+
+.app-header .role-badge {
+  height: calc(var(--logo-h) * var(--badge-scale)) !important;
+  margin-left: 8px;
+  max-width: 40vw;
+  object-fit: contain;
+  align-self: center;
+}
+
+/* Slightly smaller on narrower screens */
+@media (max-width: 980px) {
+  :root { --badge-scale: .62; }
+}
+@media (max-width: 720px) {
+  :root { --badge-scale: .58; }
+}
+
+/******** Center the header (logo + role picture) ********/
+.app-header .header-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* <— center the header contents */
+  gap: 16px;
+}
+
+/* Role badge sits next to the logo (not pushed to the edge) */
+.app-header .role-badge {
+  margin-left: 12px;         /* no auto; keep it next to the logo */
+  height: calc(var(--logo-h) * 0.35);  /* smaller than logo; tweak if needed */
+  max-width: 40vw;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/******** Center the navigation bar contents ********/
+.role-navbar .nav-inner {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* <— center the nav cluster (menu + Logout) */
+  gap: 16px;
+}
+
+/* Keep left menu and Logout inline so the whole cluster centers cleanly */
+.role-navbar .nav-left,
+.role-navbar .nav-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Login page heading image */
+.login-badge {
+  display: block;
+  height: 48px;           /* tweak if you want it larger/smaller */
+  margin: 4px auto 12px;  /* center above the form */
+  object-fit: contain;
+}
+
+/* Full-width top ribbon for info blocks */
+.card.green-border {
+  border: 10px solid #d7fbd4 !important;
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-ribbon {
+  background: #d7fbd4;               /* ribbon color */
+  /* Pull edge-to-edge inside the card (overrides card padding) */
+  margin: -16px -16px 12px;           /* top/left/right negative = card padding */
+  padding: 10px 16px;
+  border: none;                       /* no black outline */
+  border-radius: 10px 10px 0 0;       /* match the card’s top rounding */
+}
+
+.info-ribbon h3 {
+  margin: 0;
+  font-family: "Merriweather", serif;
+  font-weight: 900;
+  font-size: 1.06rem;
+  color: #000;
+}
+
+/* Smaller image for the NAFLD stages block */
+.info-split .split-img {
+  width: 200px !important;    /* was 240px */
+  flex: 0 0 200px !important; 
+  max-width: 40% !important;  /* keep it compact on wider screens */
+}
+
+/* === NAFLD stages split layout (override) === */
+.info-split {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.info-split .split-img {
+  width: 200px !important;        /* was 160px */
+  flex: 0 0 200px !important;
+  max-width: 36% !important;
+}
+
+.info-split > .split-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.info-split > .split-text ul {
+  margin: 0;                       /* keep bullets snug with the ribbon */
+  padding-left: 18px;
+}
+
+/* Stack on small screens */
+@media (max-width: 760px) {
+  .info-split { flex-direction: column; }
+  .info-split .split-img {
+    width: 100% !important;
+    flex: 0 0 auto !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Bigger NAFLD-stages image */
+.info-split .split-img {
+  width: 240px !important;          /* was 200px */
+  flex: 0 0 240px !important;
+  max-width: 42% !important;
+}
+
+/* keep it reasonable on medium screens */
+@media (max-width: 900px) {
+  .info-split .split-img {
+    width: 220px !important;
+    flex-basis: 220px !important;
+  }
+}
+
+/* stack on small screens (unchanged) */
+@media (max-width: 760px) {
+  .info-split { flex-direction: column; }
+  .info-split .split-img {
+    width: 100% !important;
+    flex-basis: auto !important;
+    max-width: 100% !important;
+  }
+}

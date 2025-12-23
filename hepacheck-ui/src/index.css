@@ -1,0 +1,236 @@
+/* ===== Theme variables ===== */
+:root {
+  --brand: #a52a2a;       /* reddish-brown */
+  --brand-dark: #8b1e1e;  /* hover */
+  --text: #000000;        /* black */
+  --bg: #ffffff;          /* white */
+  --radius: 10px;
+  --gap: 12px;
+}
+
+/* ===== Page base ===== */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, serif; /* default text */
+}
+
+/* Make the whole app centered by default */
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Container used on pages to center content to viewport */
+.page-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.center-wrap {
+  max-width: 960px;
+  width: 100%;
+}
+
+/* ===== Typography ===== */
+h1 {
+  font-family: "Merriweather", serif;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+h2, h3, p, span, a, li, button {
+  font-family: Georgia, serif;
+  color: var(--text);
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius);
+  border: 2px solid #000;
+  background: var(--brand);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, transform .05s ease;
+}
+.btn:hover { background: var(--brand-dark); }
+.btn:active { transform: translateY(1px); }
+
+/* Outline style that keeps black border */
+.btn-outline {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+}
+.btn-outline:hover {
+  background: #f4f4f4;
+}
+
+/* Group spacing */
+.btn-row {
+  display: inline-flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ===== Navbar / Taskbar ===== */
+.navbar {
+  width: 100%;
+  padding: 10px 16px;
+  box-sizing: border-box;
+  border-bottom: 2px solid #000; /* black outline at top too */
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.brand h1 {
+  font-size: 20px;          /* compact in navbar */
+  margin: 0;
+}
+
+.brand-tag {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.nav-actions {
+  display: inline-flex;
+  gap: 10px;
+}
+
+/* Content section spacing on dashboards */
+.section {
+  padding: 24px;
+  text-align: left;
+  max-width: 1000px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.card {
+  border: 2px solid #000;
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 12px 0;
+  background: #fff;
+}
+
+/* …keep the rest of your CSS… */
+
+.nav-active {
+  background: #f4f4f4;   /* subtle fill but keeps black outline */
+  color: #000;
+}
+
+/* === Tabs inside Patient === */
+.tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #000;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  font-family: Georgia, serif;
+  background: #fff;
+  border: 2px solid #000;
+  border-bottom: 0;             /* seamless with tab panel border */
+  padding: 8px 14px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.tab.active {
+  background: #f4f4f4;
+}
+
+.tab-panel {
+  border: 2px solid #000;
+  border-radius: 0 10px 10px 10px;
+  padding: 16px;
+  background: #fff;
+}
+
+/* Sub-tabs for calculators */
+.subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.subtab {
+  font-family: Georgia, serif;
+  background: #fff;
+  border: 2px solid #000;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.subtab.active { background: #f4f4f4; }
+
+/* Simple grid for forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+label {
+  font-weight: 600;
+}
+input[type="number"], input[type="text"] {
+  border: 2px solid #000;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.result-box {
+  border: 2px solid #000;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 12px;
+  background: #fff;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 2px solid #000;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+.badge.low    { background: #d1f7d6; }
+.badge.int    { background: #fff6c2; }
+.badge.high   { background: #ffd3d3; }
