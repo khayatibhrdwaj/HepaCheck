@@ -1,5 +1,6 @@
 # Python
 .venv/
+venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -19,7 +20,4 @@ Thumbs.db
 
 # Local DB (do not push)
 *.db
-
-.venv
-venv
 hepacheck.db
