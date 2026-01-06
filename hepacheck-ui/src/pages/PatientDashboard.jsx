@@ -17,15 +17,19 @@ function calcFIB4({ age, ast, alt, platelets }) {
   if ([age, ast, alt, platelets].some((x) => x == null || x <= 0)) return null;
   return (age * ast) / (platelets * Math.sqrt(alt));
 }
+
 function calcAPRI({ ast, platelets, ulnAst = 40 }) {
   if ([ast, platelets].some((x) => x == null || x <= 0)) return null;
   return ((ast / ulnAst) * 100) / platelets; // platelets in 10^9/L
 }
+
 function calcNFS({ age, bmi, ifgOrDm, ast, alt, platelets, albumin }) {
   if (
     [age, bmi, ast, alt, platelets, albumin].some((x) => x == null || x <= 0) ||
     ifgOrDm == null
-  ) return null;
+  )
+    return null;
+
   return (
     -1.675 +
     0.037 * age +
@@ -36,10 +40,14 @@ function calcNFS({ age, bmi, ifgOrDm, ast, alt, platelets, albumin }) {
     0.66 * albumin
   );
 }
-function calcHOMAIR({ glucose_mgdl, insulin }) {
-  if ([glucose_mgdl, insulin].some((x) => x == null || x <= 0)) return null;
-  const glucose_mmol = glucose_mgdl * 0.0555;
-  return (glucose_mmol * insulin) / 22.5;
+
+/**
+ * HOMA-IR (mg/dL variant):
+ * HOMA-IR = (Fasting glucose [mg/dL] × Fasting insulin [µU/mL]) / 405
+ */
+function calcHOMAIR({ fasting_glucose_mgdl, fasting_insulin }) {
+  if ([fasting_glucose_mgdl, fasting_insulin].some((x) => x == null || x <= 0)) return null;
+  return (fasting_glucose_mgdl * fasting_insulin) / 405;
 }
 
 /* Risk: Low / Medium / High per your request */
@@ -76,8 +84,11 @@ export default function PatientDashboard() {
   const [platelets, setPlatelets] = useState("");
   const [albumin, setAlbumin] = useState("");
   const [bmi, setBMI] = useState("");
-  const [glucose, setGlucose] = useState("");
-  const [insulin, setInsulin] = useState("");
+
+  // ✅ fasting fields (UI labels must say fasting)
+  const [fastingGlucose, setFastingGlucose] = useState("");
+  const [fastingInsulin, setFastingInsulin] = useState("");
+
   const [ifgDm, setIfgDm] = useState(false);
 
   // Results
@@ -95,7 +106,11 @@ export default function PatientDashboard() {
   useEffect(() => {
     const raw = localStorage.getItem(LS_KEY);
     if (raw) {
-      try { setHistory(JSON.parse(raw)); } catch { setHistory([]); }
+      try {
+        setHistory(JSON.parse(raw));
+      } catch {
+        setHistory([]);
+      }
     }
   }, []);
 
@@ -107,14 +122,17 @@ export default function PatientDashboard() {
       platelets: num(platelets),
       albumin: num(albumin),
       bmi: num(bmi),
-      glucose_mgdl: num(glucose),
-      insulin: num(insulin),
+
+      // ✅ fasting payload
+      fasting_glucose_mgdl: num(fastingGlucose),
+      fasting_insulin: num(fastingInsulin),
+
       ifgOrDm: ifgDm,
     };
 
     const fib4 = calcFIB4(input);
     const apri = calcAPRI(input);
-    const nfs  = calcNFS(input);
+    const nfs = calcNFS(input);
     const homa = calcHOMAIR(input);
     const risk = fib4Risk(fib4);
 
@@ -122,7 +140,15 @@ export default function PatientDashboard() {
   };
 
   const saveToHistory = () => {
-    if (!results || (results.fib4==null && results.apri==null && results.nfs==null && results.homa==null)) return;
+    if (
+      !results ||
+      (results.fib4 == null &&
+        results.apri == null &&
+        results.nfs == null &&
+        results.homa == null)
+    )
+      return;
+
     const entry = { ts: new Date().toISOString(), ...results };
     const next = [entry, ...history].slice(0, 200);
     setHistory(next);
@@ -155,7 +181,6 @@ export default function PatientDashboard() {
 
   return (
     <div className="patient-dashboard main-shell">
-      <h2 className="section-title">Patient Dashboard – Scores &amp; Reports</h2>
 
       {/* ---------- Form (green block) ---------- */}
       <div className="card form-card" style={{ marginBottom: 12 }}>
@@ -170,12 +195,28 @@ export default function PatientDashboard() {
           <LabeledInput label="AST (U/L)" value={ast} onChange={setAST} />
           <LabeledInput label="ALT (U/L)" value={alt} onChange={setALT} />
 
-          <LabeledInput label="Platelets (×10^9/L)" value={platelets} onChange={setPlatelets} />
+          <LabeledInput
+            label="Platelets (×10^9/L)"
+            value={platelets}
+            onChange={setPlatelets}
+          />
           <LabeledInput label="Albumin (g/dL)" value={albumin} onChange={setAlbumin} />
           <LabeledInput label="BMI (kg/m²)" value={bmi} onChange={setBMI} />
 
-          <LabeledInput label="Glucose (mg/dL)" value={glucose} onChange={setGlucose} />
-          <LabeledInput label="Insulin (µU/mL)" value={insulin} onChange={setInsulin} />
+          {/* ✅ fasting labels + placeholder */}
+          <LabeledInput
+            label="Fasting Glucose (mg/dL)"
+            value={fastingGlucose}
+            onChange={setFastingGlucose}
+            placeholder="≥ 8 hours fasting"
+          />
+          <LabeledInput
+            label="Fasting Insulin (µU/mL)"
+            value={fastingInsulin}
+            onChange={setFastingInsulin}
+            placeholder="≥ 8 hours fasting"
+          />
+
           <div style={{ display: "flex", alignItems: "end" }}>
             <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input
@@ -190,9 +231,31 @@ export default function PatientDashboard() {
 
         {/* ---------- Actions ---------- */}
         <div className="score-actions">
-          <button className="btn btn-1" onClick={computeScores}>Compute Scores</button>
-          <button className="btn btn-2" onClick={saveToHistory}>Save to History</button>
-          <button className="btn btn-3" onClick={refreshHistory}>Refresh History</button>
+          <button className="btn btn-1" onClick={computeScores}>
+            Compute Scores
+          </button>
+          <button className="btn btn-2" onClick={saveToHistory}>
+            Save to History
+          </button>
+          <button className="btn btn-3" onClick={refreshHistory}>
+            Refresh History
+          </button>
+        </div>
+
+        {/* ✅ Note at the bottom of the form */}
+        <div
+          style={{
+            marginTop: 10,
+            padding: "10px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(0,0,0,0.15)",
+            background: "rgba(255,255,255,0.7)",
+            fontSize: 13,
+            lineHeight: 1.4,
+          }}
+        >
+          <strong>Note:</strong> Fasting plasma glucose and fasting serum insulin values (≥ 8
+          hours fasting) are required for accurate HOMA-IR computation.
         </div>
       </div>
 
@@ -208,8 +271,8 @@ export default function PatientDashboard() {
           }}
         >
           <Metric label="FIB-4" value={results.fib4} digits={3} />
-          <Metric label="APRI"  value={results.apri} digits={3} />
-          <Metric label="NFS"   value={results.nfs}  digits={3} />
+          <Metric label="APRI" value={results.apri} digits={3} />
+          <Metric label="NFS" value={results.nfs} digits={3} />
           <Metric label="HOMA-IR" value={results.homa} digits={3} />
         </div>
 
@@ -233,7 +296,7 @@ export default function PatientDashboard() {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 formatter={(v) => (v == null ? "—" : Number(v).toFixed(3))}
-                labelFormatter={(l, p) => (p?.[0]?.payload?.label ?? `Point ${l}`)}
+                labelFormatter={(l, p) => p?.[0]?.payload?.label ?? `Point ${l}`}
               />
               <Line
                 type="monotone"
@@ -249,8 +312,12 @@ export default function PatientDashboard() {
         </div>
 
         <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-          <button className="btn" onClick={refreshHistory}>Refresh</button>
-          <button className="btn" onClick={clearHistory}>Clear All</button>
+          <button className="btn" onClick={refreshHistory}>
+            Refresh
+          </button>
+          <button className="btn" onClick={clearHistory}>
+            Clear All
+          </button>
         </div>
       </div>
 
@@ -295,7 +362,7 @@ export default function PatientDashboard() {
 
 /* ---------------- Small UI pieces ---------------- */
 
-function LabeledInput({ label, value, onChange, suffix }) {
+function LabeledInput({ label, value, onChange, suffix, placeholder = "" }) {
   return (
     <div>
       <label className="label" style={{ display: "block", marginBottom: 6 }}>
@@ -307,11 +374,9 @@ function LabeledInput({ label, value, onChange, suffix }) {
         step="any"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder=""
+        placeholder={placeholder}
       />
-      {suffix && (
-        <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{suffix}</div>
-      )}
+      {suffix && <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>{suffix}</div>}
     </div>
   );
 }

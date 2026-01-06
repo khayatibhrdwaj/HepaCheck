@@ -1,3 +1,4 @@
+import React from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 export default function DoctorLayout() {
@@ -8,20 +9,45 @@ export default function DoctorLayout() {
     nav("/", { replace: true });
   };
 
+  // This keeps NavLink active styling consistent with your CSS
+  const linkClass = ({ isActive }) =>
+    isActive ? "role-nav-btn active" : "role-nav-btn";
+
   return (
     <>
       <nav className="role-navbar">
         <div className="nav-inner">
           <div className="role-nav-center">
-            {/* ✅ Updated order: Home → Scores → Patients → Emergency Flag → Appointments */}
-            <NavLink to="/doctor/homeinfo" className="role-nav-btn">Home</NavLink>
-            <NavLink to="/doctor/scores" className="role-nav-btn">Scores</NavLink>
-            <NavLink to="/doctor/patients" className="role-nav-btn">Patients</NavLink>
-            <NavLink to="/doctor/emergency-flag" className="role-nav-btn">Emergency Flag</NavLink>
-            <NavLink to="/doctor/appointments" className="role-nav-btn">Appointments</NavLink>
+            {/* Home → Scores → Patients → Emergency Flag → Appointments → Contact */}
+            <NavLink to="/doctor/homeinfo" className={linkClass}>
+              Home
+            </NavLink>
+
+            <NavLink to="/doctor/scores" className={linkClass}>
+              Scores
+            </NavLink>
+
+            <NavLink to="/doctor/patients" className={linkClass}>
+              Patients
+            </NavLink>
+
+            <NavLink to="/doctor/emergency-flag" className={linkClass}>
+              Emergency Flag
+            </NavLink>
+
+            <NavLink to="/doctor/appointments" className={linkClass}>
+              Appointments
+            </NavLink>
+
+            {/* ✅ NEW */}
+            <NavLink to="/doctor/contact" className={linkClass}>
+              Contact
+            </NavLink>
 
             <span className="nav-sep" aria-hidden="true" />
-            <button className="role-nav-btn logout-btn" onClick={logout}>Logout</button>
+            <button className="role-nav-btn logout-btn" onClick={logout}>
+              Logout
+            </button>
           </div>
         </div>
       </nav>
@@ -32,4 +58,3 @@ export default function DoctorLayout() {
     </>
   );
 }
-
