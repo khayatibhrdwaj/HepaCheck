@@ -1,0 +1,29 @@
+﻿{% extends "doctor/base_doctor.html" %}
+
+{% block content %}
+
+<h4>Emergency Flags</h4>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Patient</th>
+            <th>Reason</th>
+            <th>Priority</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for f in flags %}
+        <tr>
+            <td>{{ f.patient }}</td>
+            <td>{{ f.reason }}</td>
+            <td><span class="badge bg-danger">{{ f.priority }}</span></td>
+            <td>{{ f.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

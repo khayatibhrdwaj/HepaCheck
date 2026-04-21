@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div id="page-login" class="page active">
+  <div class="login-wrap">
+    <div class="login-card">
+
+      <div class="login-logo">
+        <img src="/static/images/logo.png" alt="HepaCheck"
+             style="height:90px;object-fit:contain;margin-bottom:.5rem;">
+        <p>Liver Health Monitoring Platform</p>
+      </div>
+
+      {% if error %}
+      <div class="login-error" style="display:block;">&#9888; {{ error }}</div>
+      {% endif %}
+
+      <h3 style="text-align:center;margin-bottom:1.5rem;font-family:'DM Serif Display',serif;font-size:1.6rem;">
+        Sign in to HepaCheck
+      </h3>
+
+      <!-- Role selector -->
+      <div style="margin-bottom:1.5rem;">
+        <label style="font-size:.82rem;font-weight:700;color:var(--text-muted);
+                      text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.6rem;">
+          I am signing in as
+        </label>
+        <div class="role-selector">
+          <button type="button" class="role-btn active" id="role-patient"
+                  onclick="selectRole('patient')">
+            <img src="/static/images/Patient.png" alt="" style="height:28px;margin-bottom:4px;">
+            <span>Patient</span>
+          </button>
+          <button type="button" class="role-btn" id="role-doctor"
+                  onclick="selectRole('doctor')">
+            <img src="/static/images/Doctor.png" alt="" style="height:28px;margin-bottom:4px;">
+            <span>Doctor</span>
+          </button>
+        </div>
+      </div>
+
+      <form method="post" action="/login">
+        <input type="hidden" name="role" id="role-input" value="patient">
+
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" name="email" placeholder="you@example.com" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password"
+                 placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:.5rem;">
+          Sign In
+        </button>
+      </form>
+
+      <p style="text-align:center;margin-top:1.25rem;font-size:.85rem;color:var(--text-muted);">
+        Don't have an account?
+        <a href="/register" style="color:var(--hc-green);font-weight:600;">Register here</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

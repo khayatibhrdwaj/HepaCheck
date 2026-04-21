@@ -1,0 +1,34 @@
+﻿{% extends "patient/base_patient.html" %}
+{% set page_title = "Info" %}
+{% set active_page = "patient_info" %}
+
+{% block content %}
+<div class="hc-page-head">
+  <div>
+    <h1 class="hc-page-title">Information Hub</h1>
+    <p class="hc-page-subtitle">Understand the meaning of common liver-related non-invasive scores and what they indicate.</p>
+  </div>
+</div>
+
+<div class="hc-grid hc-grid-2">
+  <div class="hc-card">
+    <div class="hc-card-title"><i class="bi bi-book"></i> FIB-4</div>
+    <p class="mb-0 text-muted">FIB-4 combines age, AST, ALT, and platelet count to estimate the likelihood of advanced fibrosis risk in a non-invasive way.</p>
+  </div>
+
+  <div class="hc-card">
+    <div class="hc-card-title"><i class="bi bi-book"></i> APRI</div>
+    <p class="mb-0 text-muted">APRI uses AST and platelet count to assess fibrosis-related risk signals and is often used as a quick screening indicator.</p>
+  </div>
+
+  <div class="hc-card">
+    <div class="hc-card-title"><i class="bi bi-book"></i> NFS</div>
+    <p class="mb-0 text-muted">The NAFLD Fibrosis Score includes age, BMI, diabetes status, AST/ALT, platelets, and albumin to estimate fibrosis probability.</p>
+  </div>
+
+  <div class="hc-card">
+    <div class="hc-card-title"><i class="bi bi-book"></i> HOMA-IR</div>
+    <p class="mb-0 text-muted">HOMA-IR estimates insulin resistance using fasting glucose and fasting insulin, giving a metabolic view alongside liver risk indicators.</p>
+  </div>
+</div>
+{% endblock %}

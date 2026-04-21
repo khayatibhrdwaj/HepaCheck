@@ -1,0 +1,87 @@
+﻿{% extends "base.html" %}
+{% set page_title = "Login" %}
+
+{% block body %}
+<div class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-grid">
+      <div class="auth-left">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <div class="hc-logo">🫀</div>
+          <div>
+            <div class="hc-brand-title">
+              <span class="hepa">Hepa</span><span class="check">Check</span>
+            </div>
+            <div class="hc-brand-subtitle">Clinical risk dashboards for patient and doctor workflows</div>
+          </div>
+        </div>
+
+        <div class="auth-title">Smarter liver risk assessment</div>
+        <div class="auth-subtitle">
+          Access a modern clinical dashboard for non-invasive liver risk scoring, longitudinal reporting, emergency review, and role-specific workflows.
+        </div>
+
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="bi bi-speedometer2"></i></div>
+          <div>
+            <div class="fw-bold">Power BI-style dashboards</div>
+            <div class="text-muted">KPI cards, trend areas, clinical panels, and actionable summaries.</div>
+          </div>
+        </div>
+
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="bi bi-shield-lock"></i></div>
+          <div>
+            <div class="fw-bold">Secure role-based access</div>
+            <div class="text-muted">Separate patient and doctor views with protected navigation.</div>
+          </div>
+        </div>
+
+        <div class="auth-feature">
+          <div class="auth-feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+          <div>
+            <div class="fw-bold">Score tracking</div>
+            <div class="text-muted">View, compute, and monitor FIB-4, APRI, NFS, and HOMA-IR over time.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-right">
+        <div class="auth-form-wrap">
+          <div class="auth-form-title">Welcome back</div>
+          <div class="auth-form-subtitle">Sign in to continue to HepaCheck.</div>
+
+          {% if error %}
+          <div class="alert alert-danger hc-alert">{{ error }}</div>
+          {% endif %}
+
+          <form method="post" action="{{ url_for('login_post') }}" class="d-grid gap-3">
+            <div>
+              <label class="form-label">Email Address</label>
+              <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+
+            <div>
+              <label class="form-label">Password</label>
+              <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn btn-hc-primary w-100">
+              <i class="bi bi-box-arrow-in-right me-1"></i> Login
+            </button>
+          </form>
+
+          <div class="mt-4 d-grid gap-2">
+            <a href="{{ url_for('register_patient_page') }}" class="btn btn-hc-outline w-100">
+              Register as Patient
+            </a>
+            <a href="{{ url_for('register_doctor_page') }}" class="btn btn-hc-green w-100">
+              Register as Doctor
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

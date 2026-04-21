@@ -1,0 +1,52 @@
+﻿{% extends "doctor/base_doctor.html" %}
+
+{% block content %}
+
+<div class="row">
+
+<!-- LEFT LIST -->
+<div class="col-md-4">
+    <div class="card shadow-sm">
+        <div class="card-header">Patients</div>
+        <ul class="list-group list-group-flush">
+            {% for p in patients %}
+            <li class="list-group-item">
+                <a href="{{ url_for('doctor_patient_detail', patient_id=p.id) }}">
+                    {{ p.name }} ({{ p.fib4_risk }})
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- RIGHT DETAILS -->
+<div class="col-md-8">
+    <div class="card shadow-sm p-3">
+        <h5>Patient Reports</h5>
+
+        {% if patient_reports %}
+        <table class="table">
+            <tr>
+                <th>Date</th>
+                <th>FIB-4</th>
+                <th>APRI</th>
+            </tr>
+
+            {% for r in patient_reports %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td>{{ r.fib4_score }}</td>
+                <td>{{ r.apri_score }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>Select a patient</p>
+        {% endif %}
+    </div>
+</div>
+
+</div>
+
+{% endblock %}

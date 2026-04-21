@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .doctor-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    transition: box-shadow .2s, border-color .2s;
+    display: flex;
+    flex-direction: column;
+  }
+  .doctor-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--hc-green-mid);
+  }
+  .doctor-card.is-current { border-color: var(--hc-green-mid); }
+  .doctor-card-header {
+    background: var(--surface);
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .doctor-card.is-current .doctor-card-header { background: var(--hc-green-light); }
+  .current-badge {
+    position: absolute; top: .8rem; right: .8rem;
+    background: var(--hc-green); color: #fff;
+    font-size: .68rem; font-weight: 700;
+    padding: .2rem .65rem; border-radius: 20px;
+    letter-spacing: .04em; z-index: 1;
+  }
+  .doctor-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .75rem; }
+  .detail-item { display: flex; align-items: flex-start; gap: .5rem; }
+  .detail-icon { font-size: .9rem; flex-shrink: 0; margin-top: .05rem; }
+  .detail-label { font-size: .7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+  .detail-value { font-size: .82rem; color: var(--text-primary); }
+  .btn-already {
+    width: 100%; font-size: .85rem; padding: .6rem;
+    border-radius: var(--radius); border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
+    font-family: inherit; cursor: not-allowed;
+  }
+  .btn-remove {
+    font-size: .82rem; padding: .4rem .9rem;
+    background: var(--hc-red-light); color: var(--hc-red);
+    border: 1.5px solid var(--hc-red); border-radius: var(--radius);
+    font-family: inherit; font-weight: 600; cursor: pointer; transition: all .2s;
+  }
+  .btn-remove:hover { background: var(--hc-red); color: #fff; }
+</style>
+
+<div id="page-patient" class="page active">
+
+  <div class="top-banner">
+    <img src="/static/images/logo.png" alt="HepaCheck" class="banner-logo" height="120">
+    <div class="banner-role">
+      <img src="/static/images/Patient.png" alt="Patient" height="80">
+    </div>
+  </div>
+
+  <!--
+    Nav bar — identical markup and CSS classes to home.html.
+    "Choose Doctor" has .active since we ARE on this page.
+    All other items navigate back to /patient/home with the correct hash,
+    which home.html picks up on load and activates the right tab.
+  -->
+  <header class="app-header">
+    <nav class="header-nav" id="patient-nav" style="margin-left:0;">
+      <span class="nav-link" onclick="window.location.href='/patient/home'">Home</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#scores'">Scores</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#reports'">Reports</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#info'">Info</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#community'">Community</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#emergency'">Emergency</span>
+      <span class="nav-link active">Choose Doctor</span>
+      <span class="nav-link" onclick="window.location.href='/patient/home#contact'">Contact</span>
+    </nav>
+    <div class="header-right" style="margin-left:auto;">
+      <span style="font-size:.9rem;color:#ccc;">{{ user.username }}</span>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </header>
+
+  <div class="app-content">
+    <div class="main-content">
+
+      <div class="page-header">
+        <h2>Choose Your Doctor</h2>
+        <p>
+          {% if assignment %}
+            You currently have a doctor assigned. You can switch to a different one below.
+          {% else %}
+            Browse registered doctors and select one to manage your care.
+          {% endif %}
+        </p>
+      </div>
+
+      {# ── Current assignment banner ── #}
+      {% if assignment %}
+        {% set cur = assignment.doctor_user %}
+        <div style="background:var(--hc-green-light);border:1.5px solid var(--hc-green-mid);
+                    border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:1.75rem;
+                    display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--hc-green);
+                      display:flex;align-items:center;justify-content:center;
+                      color:#fff;font-weight:700;font-size:1rem;flex-shrink:0;">
+            {{ cur.username[:2]|upper }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:.95rem;color:var(--text-primary);">
+              Current doctor: Dr. {{ cur.username }}
+            </div>
+            {% if cur.doctor_profile %}
+              <div style="font-size:.83rem;color:var(--text-secondary);margin-top:.15rem;">
+                {{ cur.doctor_profile.specialisation }}
+                {% if cur.doctor_profile.clinic_hospital %} &middot; {{ cur.doctor_profile.clinic_hospital }}{% endif %}
+                {% if cur.doctor_profile.city %} &middot; {{ cur.doctor_profile.city }}{% endif %}
+                &middot; Assigned {{ assignment.assigned_at.strftime('%d %b %Y') }}
+              </div>
+            {% endif %}
+          </div>
+          <form method="POST" action="/patient/remove-doctor">
+            <button type="submit" class="btn-remove"
+                    onclick="return confirm('Remove your current doctor?')">
+              Remove
+            </button>
+          </form>
+        </div>
+      {% endif %}
+
+      {# ── Toolbar ── #}
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <div class="search-bar" style="flex:1;max-width:420px;">
+          <input type="text" id="doctor-search"
+                 placeholder="Search by name, specialisation, city, hospital..."
+                 oninput="filterDoctors(this.value)"
+                 style="width:100%;padding:.55rem 1rem .55rem 2.25rem;">
+        </div>
+        <span style="font-size:.85rem;color:var(--text-muted);" id="doctor-count">
+          {{ doctors|length }} doctor{{ 's' if doctors|length != 1 else '' }} available
+        </span>
+      </div>
+
+      {# ── Specialisation filter pills ── #}
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem;" id="spec-filters">
+        <button class="forum-tag selected" onclick="filterBySpec(this,'')">All</button>
+        {% set specs = [] %}
+        {% for doc in doctors %}
+          {% if doc.doctor_profile and doc.doctor_profile.specialisation not in specs %}
+            {% set _ = specs.append(doc.doctor_profile.specialisation) %}
+            <button class="forum-tag"
+                    onclick="filterBySpec(this,'{{ doc.doctor_profile.specialisation }}')">
+              {{ doc.doctor_profile.specialisation }}
+            </button>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      {# ── Doctor cards ── #}
+      {% if not doctors %}
+        <div class="widget-card" style="text-align:center;padding:3rem;">
+          <div style="font-size:3rem;margin-bottom:1rem;">&#128104;&#8205;&#9877;&#65039;</div>
+          <h3 style="font-family:'DM Serif Display',serif;font-size:1.3rem;
+                     color:var(--text-primary);margin-bottom:.5rem;">
+            No doctors registered yet
+          </h3>
+          <p style="color:var(--text-muted);font-size:.9rem;">
+            Doctors will appear here once they create an account.
+            Please check back later or contact your clinic directly.
+          </p>
+        </div>
+
+      {% else %}
+        <div id="doctors-grid"
+             style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+
+          {% for doc in doctors %}
+            {% set p = doc.doctor_profile %}
+            {% set is_current = assignment and assignment.doctor_id == doc.id %}
+
+            <div class="doctor-card {{ 'is-current' if is_current else '' }}"
+                 data-name="{{ doc.username|lower }}"
+                 data-spec="{{ p.specialisation|lower if p else '' }}"
+                 data-city="{{ p.city|lower if p else '' }}"
+                 data-hospital="{{ p.clinic_hospital|lower if p else '' }}">
+
+              {% if is_current %}<div class="current-badge">&#10003; Current</div>{% endif %}
+
+              <div class="doctor-card-header">
+                <div style="width:52px;height:52px;border-radius:50%;flex-shrink:0;
+                            background:var(--hc-blue);display:flex;align-items:center;
+                            justify-content:center;color:#fff;font-weight:700;font-size:1.1rem;">
+                  {{ doc.username[:2]|upper }}
+                </div>
+                <div style="min-width:0;">
+                  <div style="font-weight:700;font-size:1rem;color:var(--text-primary);">
+                    Dr. {{ doc.username }}
+                  </div>
+                  {% if p %}
+                    <div style="font-size:.8rem;color:var(--text-muted);margin-top:.1rem;">
+                      {{ p.highest_degree }}
+                      {% if p.specialisation %}
+                        &nbsp;&middot;&nbsp;<strong style="color:var(--hc-green);">{{ p.specialisation }}</strong>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                  {% if p and p.is_verified %}
+                    <div style="display:inline-flex;align-items:center;gap:.3rem;margin-top:.3rem;
+                                background:var(--hc-green-light);color:var(--hc-green);
+                                font-size:.68rem;font-weight:700;padding:.15rem .5rem;
+                                border-radius:20px;border:1px solid var(--hc-green-mid);">
+                      &#10003; Verified
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div style="padding:1rem 1.5rem;flex:1;display:flex;flex-direction:column;gap:.55rem;">
+                {% if p %}
+                  <div class="doctor-detail-grid">
+                    <div class="detail-item">
+                      <span class="detail-icon">&#127973;</span>
+                      <div><div class="detail-label">Hospital / Clinic</div><div class="detail-value">{{ p.clinic_hospital if p.clinic_hospital else '&mdash;' }}</div></div>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">&#128205;</span>
+                      <div><div class="detail-label">City</div><div class="detail-value">{{ p.city if p.city else '&mdash;' }}</div></div>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">&#127891;</span>
+                      <div><div class="detail-label">Degree</div><div class="detail-value">{{ p.highest_degree }}</div></div>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">&#9201;</span>
+                      <div><div class="detail-label">Experience</div><div class="detail-value">{{ p.years_practicing }} yr{{ 's' if p.years_practicing != 1 else '' }}</div></div>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">&#128220;</span>
+                      <div><div class="detail-label">Licence No.</div><div class="detail-value" style="font-family:monospace;">{{ p.medical_licence }}</div></div>
+                    </div>
+                    <div class="detail-item">
+                      <span class="detail-icon">&#9993;</span>
+                      <div><div class="detail-label">Email</div><div class="detail-value" style="word-break:break-all;">{{ doc.email }}</div></div>
+                    </div>
+                  </div>
+                  {% if p.bio %}
+                    <div style="margin-top:.35rem;padding-top:.75rem;border-top:1px solid var(--border);
+                                font-size:.82rem;color:var(--text-muted);line-height:1.6;">
+                      {{ p.bio }}
+                    </div>
+                  {% endif %}
+                {% else %}
+                  <p style="font-size:.85rem;color:var(--text-muted);">No profile details available.</p>
+                {% endif %}
+              </div>
+
+              <div style="padding:.9rem 1.5rem 1.25rem;">
+                {% if is_current %}
+                  <button class="btn-already" disabled>&#10003; Already your doctor</button>
+                {% else %}
+                  <form method="POST" action="/patient/choose-doctor">
+                    <input type="hidden" name="doctor_id" value="{{ doc.id }}">
+                    <button type="submit" class="btn-primary"
+                            style="font-size:.87rem;padding:.65rem;"
+                            onclick="return confirm('Choose Dr. {{ doc.username }} as your doctor?')">
+                      {% if assignment %}Switch to Dr. {{ doc.username }}
+                      {% else %}Choose Dr. {{ doc.username }}{% endif %}
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+
+            </div>
+          {% endfor %}
+        </div>
+
+        <div id="no-results"
+             style="display:none;text-align:center;padding:3rem;color:var(--text-muted);">
+          <div style="font-size:2.5rem;margin-bottom:.75rem;">&#128269;</div>
+          <p>No doctors match your search. Try different keywords.</p>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script>
+var activeSpec = '';
+
+function filterDoctors(query) {
+  var q = query.toLowerCase();
+  var visible = 0;
+  var cards = document.querySelectorAll('.doctor-card');
+  for (var i = 0; i < cards.length; i++) {
+    var card     = cards[i];
+    var name     = card.getAttribute('data-name')     || '';
+    var spec     = card.getAttribute('data-spec')     || '';
+    var city     = card.getAttribute('data-city')     || '';
+    var hospital = card.getAttribute('data-hospital') || '';
+    var combined = name + spec + city + hospital;
+    var show = (!q || combined.indexOf(q) !== -1) && (!activeSpec || spec === activeSpec.toLowerCase());
+    card.style.display = show ? '' : 'none';
+    if (show) visible++;
+  }
+  document.getElementById('doctor-count').textContent =
+    visible + ' doctor' + (visible !== 1 ? 's' : '') + ' available';
+  document.getElementById('no-results').style.display = visible === 0 ? '' : 'none';
+}
+
+function filterBySpec(btn, spec) {
+  activeSpec = spec;
+  var pills = document.querySelectorAll('#spec-filters .forum-tag');
+  for (var i = 0; i < pills.length; i++) pills[i].classList.remove('selected');
+  btn.classList.add('selected');
+  filterDoctors(document.getElementById('doctor-search').value);
+}
+</script>
+
+{% endblock %}

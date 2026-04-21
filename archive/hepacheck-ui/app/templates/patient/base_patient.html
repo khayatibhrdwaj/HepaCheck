@@ -1,0 +1,19 @@
+﻿{% extends "base.html" %}
+{% set role = "Patient" %}
+
+{% block nav_links %}
+  {% set patient_nav = [
+    ('patient_home', 'Home', 'house-fill'),
+    ('patient_scores', 'Scores', 'calculator-fill'),
+    ('patient_reports', 'Reports', 'file-earmark-bar-graph-fill'),
+    ('patient_info', 'Info', 'info-circle-fill'),
+    ('patient_community', 'Community', 'people-fill'),
+    ('patient_emergency', 'Emergency', 'exclamation-triangle-fill'),
+    ('patient_contact', 'Contact', 'envelope-fill')
+  ] %}
+  {% for endpoint, label, icon in patient_nav %}
+    <a href="{{ url_for(endpoint) }}" class="nav-link hc-nav-link {% if active_page == endpoint %}active{% endif %}">
+      <i class="bi bi-{{ icon }} me-1"></i>{{ label }}
+    </a>
+  {% endfor %}
+{% endblock %}

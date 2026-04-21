@@ -1,0 +1,1063 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div id="page-doctor" class="page active">
+
+  {# Hidden config element — carries all Jinja values JS needs safely #}
+  <div id="doctor-page-config"
+       style="display:none;"
+       data-tab="{{ active_tab or 'home' }}"
+       data-detail="{{ 'true' if detail_patient else 'false' }}"
+       data-open-flags="{{ stats.open_flags | default(0) }}">
+  </div>
+
+  <!-- ── Top white banner ── -->
+  <div class="top-banner">
+    <img src="/static/images/logo.png" alt="HepaCheck" class="banner-logo" height="120">
+    <div class="banner-role">
+      <img src="/static/images/Doctor.png" alt="Doctor" height="80">
+    </div>
+  </div>
+
+  <!-- ── Nav bar ── -->
+  <header class="app-header">
+    <nav class="header-nav" id="doctor-nav" style="margin-left:0;">
+      <span class="nav-link {% if active_tab == 'home' or not active_tab %}active{% endif %}"
+            onclick="showDoctorTab('home')">Home</span>
+      <span class="nav-link {% if active_tab == 'scores' %}active{% endif %}"
+            onclick="showDoctorTab('scores')">Scores</span>
+      <span class="nav-link {% if active_tab == 'patients' %}active{% endif %}"
+            onclick="showDoctorTab('patients')">Patients</span>
+      <span class="nav-link {% if active_tab == 'emergency-flag' %}active{% endif %}"
+            onclick="showDoctorTab('emergency-flag')">Emergency Flag</span>
+      <span class="nav-link {% if active_tab == 'appointments' %}active{% endif %}"
+            onclick="showDoctorTab('appointments')">Appointments</span>
+      <span class="nav-link {% if active_tab == 'contact' %}active{% endif %}"
+            onclick="showDoctorTab('contact')">Contact</span>
+    </nav>
+    <div class="header-right" style="margin-left:auto;">
+      <span style="font-size:.9rem;color:#ccc;">{{ user.username }}</span>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </header>
+
+  <div class="app-content">
+    <div class="main-content" id="doctor-content">
+
+
+      {# ══════════════════════════════════════════
+         HOME TAB
+         Variables from router: stats, patients,
+         entries, emergencies, open_flags
+      ══════════════════════════════════════════ #}
+      <div id="dtab-home" {% if active_tab and active_tab != 'home' %}style="display:none;"{% endif %}>
+
+        <div class="page-header">
+          <h2>Clinical Overview</h2>
+          <p>Welcome back, Dr. {{ user.username }}. Here is your current patient summary.</p>
+        </div>
+
+        {# ── KPI Cards — all from stats dict ── #}
+        <div class="kpi-grid">
+
+          <div class="kpi-card blue">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-label">Registered Patients</div>
+            <div class="kpi-value">{{ stats.total_patients }}</div>
+            <div class="kpi-trend">
+              {% if stats.total_patients == 0 %}
+                No patients yet
+              {% elif stats.total_patients == 1 %}
+                1 patient under your care
+              {% else %}
+                {{ stats.total_patients }} patients under your care
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="kpi-card red">
+            <div class="kpi-icon">🚨</div>
+            <div class="kpi-label">Open Flags</div>
+            <div class="kpi-value">{{ stats.open_flags }}</div>
+            <div class="kpi-trend">
+              {% if stats.open_flags == 0 %}
+                No open flags
+              {% else %}
+                Requires attention
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="kpi-card amber">
+            <div class="kpi-icon">⚠️</div>
+            <div class="kpi-label">Emergency Entries</div>
+            <div class="kpi-value">{{ stats.emergencies }}</div>
+            <div class="kpi-trend">
+              {% if stats.emergencies == 0 %}
+                None flagged
+              {% else %}
+                Unflagged emergency entries
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="kpi-card teal">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-label">Total Score Entries</div>
+            <div class="kpi-value">{{ stats.total_entries }}</div>
+            <div class="kpi-trend">
+              Across all patients
+            </div>
+          </div>
+
+        </div>{# /kpi-grid #}
+
+        {# ── Only show the rest if doctor has patients ── #}
+        {% if stats.total_patients == 0 %}
+
+          <div class="widget-card" style="text-align:center;padding:3rem;">
+            <div style="font-size:3rem;margin-bottom:1rem;">🏥</div>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.4rem;color:var(--text-primary);margin-bottom:.5rem;">
+              No patients yet
+            </h3>
+            <p style="color:var(--text-muted);font-size:.9rem;max-width:400px;margin:0 auto;">
+              Patient data will appear here once patients register and submit score entries.
+              You can use the <strong>Score Calculator</strong> tab to manually assess a patient.
+            </p>
+          </div>
+
+        {% else %}
+
+          <div class="dashboard-grid">
+
+            {# ── Recent Score Entries ── #}
+            <div class="widget-card">
+              <div class="widget-title">
+                Recent Score Entries
+                <span class="badge">{{ entries | length }} total</span>
+              </div>
+              {% if entries %}
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Patient</th>
+                      <th>Date</th>
+                      <th>FIB-4</th>
+                      <th>APRI</th>
+                      <th>Risk</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for entry in entries[:8] %}
+                    <tr>
+                      <td style="font-weight:600;">{{ entry.user.username }}</td>
+                      <td style="color:var(--text-muted);font-size:.82rem;">
+                        {{ entry.created_at.strftime('%d %b %Y') }}
+                      </td>
+                      <td>
+                        {% if entry.fib4 is not none %}
+                          {{ "%.2f"|format(entry.fib4) }}
+                        {% else %}—{% endif %}
+                      </td>
+                      <td>
+                        {% if entry.apri is not none %}
+                          {{ "%.3f"|format(entry.apri) }}
+                        {% else %}—{% endif %}
+                      </td>
+                      <td>
+                        {% if entry.fib4 is not none %}
+                          {% if entry.fib4 < 1.30 %}
+                            <span class="risk-pill low">Low</span>
+                          {% elif entry.fib4 < 2.67 %}
+                            <span class="risk-pill moderate">Moderate</span>
+                          {% else %}
+                            <span class="risk-pill high">High</span>
+                          {% endif %}
+                        {% else %}
+                          <span style="color:var(--text-muted);">—</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {# Only show flag button if not already flagged #}
+                        {% set already_flagged = open_flags | selectattr('entry_id', 'equalto', entry.id) | list %}
+                        {% if already_flagged %}
+                          <span style="font-size:.75rem;color:var(--hc-amber);font-weight:600;">Flagged</span>
+                        {% elif entry.is_emergency %}
+                          <form method="POST" action="/doctor/flag" style="display:inline;">
+                            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                            <button type="submit" class="btn-danger"
+                                    style="font-size:.75rem;padding:.25rem .6rem;">
+                              🚨 Flag
+                            </button>
+                          </form>
+                        {% else %}
+                          <form method="POST" action="/doctor/flag" style="display:inline;">
+                            <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                            <button type="submit" class="btn-outline"
+                                    style="font-size:.75rem;padding:.25rem .6rem;">
+                              Flag
+                            </button>
+                          </form>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              {% else %}
+                <div class="empty-state">
+                  <div class="empty-icon">📋</div>
+                  <p>No score entries submitted yet.</p>
+                </div>
+              {% endif %}
+            </div>
+
+            {# ── Risk Distribution — computed from real entries ── #}
+            <div class="widget-card">
+              <div class="widget-title">Risk Distribution</div>
+              {% set ns = namespace(low=0, mod=0, high=0) %}
+              {% for entry in entries %}
+                {% if entry.fib4 is not none %}
+                  {% if entry.fib4 < 1.30 %}
+                    {% set ns.low = ns.low + 1 %}
+                  {% elif entry.fib4 < 2.67 %}
+                    {% set ns.mod = ns.mod + 1 %}
+                  {% else %}
+                    {% set ns.high = ns.high + 1 %}
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+              {% set total_scored = ns.low + ns.mod + ns.high %}
+
+              {% if total_scored == 0 %}
+                <div class="empty-state" style="padding:1.5rem;">
+                  <p>No FIB-4 data available yet.</p>
+                </div>
+              {% else %}
+                <div style="display:flex;flex-direction:column;gap:.9rem;margin-top:.5rem;">
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:.35rem;">
+                      <span style="color:var(--text-secondary);">Low Risk (FIB-4 &lt;1.30)</span>
+                      <span style="font-weight:700;color:var(--hc-green);">{{ ns.low }} entr{{ 'y' if ns.low == 1 else 'ies' }}</span>
+                    </div>
+                    {% set low_pct = ((ns.low / total_scored) * 100)|round|int %}
+                    <div style="height:10px;background:var(--hc-green-light);border-radius:5px;overflow:hidden;">
+                      <div data-pct="{{ low_pct }}" style="height:100%;background:var(--hc-green);border-radius:5px;width:0;" class="risk-bar"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:.35rem;">
+                      <span style="color:var(--text-secondary);">Moderate Risk</span>
+                      <span style="font-weight:700;color:var(--hc-amber);">{{ ns.mod }} entr{{ 'y' if ns.mod == 1 else 'ies' }}</span>
+                    </div>
+                    {% set mod_pct = ((ns.mod / total_scored) * 100)|round|int %}
+                    <div style="height:10px;background:var(--hc-amber-light);border-radius:5px;overflow:hidden;">
+                      <div data-pct="{{ mod_pct }}" style="height:100%;background:var(--hc-amber);border-radius:5px;width:0;" class="risk-bar"></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style="display:flex;justify-content:space-between;font-size:.88rem;margin-bottom:.35rem;">
+                      <span style="color:var(--text-secondary);">High Risk (FIB-4 &gt;2.67)</span>
+                      <span style="font-weight:700;color:var(--hc-red);">{{ ns.high }} entr{{ 'y' if ns.high == 1 else 'ies' }}</span>
+                    </div>
+                    {% set high_pct = ((ns.high / total_scored) * 100)|round|int %}
+                    <div style="height:10px;background:var(--hc-red-light);border-radius:5px;overflow:hidden;">
+                      <div data-pct="{{ high_pct }}" style="height:100%;background:var(--hc-red);border-radius:5px;width:0;" class="risk-bar"></div>
+                    </div>
+                  </div>
+
+                  <p style="font-size:.78rem;color:var(--text-muted);margin-top:.25rem;">
+                    Based on {{ total_scored }} scored entr{{ 'y' if total_scored == 1 else 'ies' }}
+                  </p>
+                </div>
+              {% endif %}
+            </div>
+
+          </div>{# /dashboard-grid #}
+
+          {# ── Open Flags ── #}
+          {% if open_flags %}
+          <div class="widget-card" style="margin-top:1.25rem;">
+            <div class="widget-title" style="color:var(--hc-red);">
+              🚨 Open Flags
+              <span class="badge" style="background:var(--hc-red-light);color:var(--hc-red);">{{ open_flags|length }}</span>
+            </div>
+            {% for flag in open_flags %}
+              {% set entry = flag.entry %}
+              <div class="flag-list-item">
+                <span class="flag-severity high">Open</span>
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:.9rem;">
+                    {{ entry.user.username if entry else 'Unknown' }}
+                    <span style="font-weight:400;color:var(--text-muted);font-size:.82rem;">
+                      — Entry {{ entry.created_at.strftime('%d %b %Y') if entry else '' }}
+                    </span>
+                  </div>
+                  {% if flag.note %}
+                    <div style="font-size:.82rem;color:var(--text-muted);">{{ flag.note }}</div>
+                  {% endif %}
+                  {% if entry %}
+                    <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem;">
+                      FIB-4: {{ "%.2f"|format(entry.fib4) if entry.fib4 else '—' }} ·
+                      APRI: {{ "%.3f"|format(entry.apri) if entry.apri else '—' }}
+                    </div>
+                  {% endif %}
+                </div>
+                <form method="POST" action="/doctor/flag/{{ flag.id }}/resolve">
+                  <button type="submit" class="btn-outline"
+                          style="font-size:.78rem;padding:.3rem .75rem;color:var(--hc-green);border-color:var(--hc-green);">
+                    ✓ Resolve
+                  </button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {# ── Unflagged Emergencies ── #}
+          {% if emergencies %}
+          <div class="widget-card" style="margin-top:1.25rem;border-color:#f9c94a;">
+            <div class="widget-title" style="color:var(--hc-amber);">
+              ⚠️ Unflagged Emergency Entries
+              <span class="badge" style="background:var(--hc-amber-light);color:var(--hc-amber);">{{ emergencies|length }}</span>
+            </div>
+            {% for entry in emergencies %}
+              <div class="flag-list-item">
+                <span class="flag-severity medium">Emergency</span>
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:.9rem;">
+                    {{ entry.user.username }}
+                    <span style="font-weight:400;color:var(--text-muted);font-size:.82rem;">
+                      — {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}
+                    </span>
+                  </div>
+                  <div style="font-size:.78rem;color:var(--text-muted);margin-top:.2rem;">
+                    FIB-4: {{ "%.2f"|format(entry.fib4) if entry.fib4 else '—' }} ·
+                    APRI: {{ "%.3f"|format(entry.apri) if entry.apri else '—' }} ·
+                    NFS: {{ "%.3f"|format(entry.nfs) if entry.nfs else '—' }}
+                  </div>
+                </div>
+                <form method="POST" action="/doctor/flag" style="display:inline;">
+                  <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                  <button type="submit" class="btn-danger"
+                          style="font-size:.78rem;padding:.3rem .75rem;">
+                    🚨 Flag Entry
+                  </button>
+                </form>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+        {% endif %}{# /if has patients #}
+
+        {# ── Clinical Reference — always shown ── #}
+        <div class="dashboard-grid thirds" style="margin-top:1.25rem;">
+          <div class="widget-card">
+            <div class="widget-title">Fatty Liver Disease 🍂</div>
+            <p style="font-size:.9rem;line-height:1.75;color:var(--text-secondary);">
+              Characterised by excessive triglyceride accumulation within hepatocytes.
+              Associated with alcohol intake (AFLD) or metabolic risk factors (NAFLD).
+              May progress to NASH, fibrosis, and cirrhosis.
+            </p>
+          </div>
+          <div class="widget-card">
+            <div class="widget-title">Hepatitis 🦠</div>
+            <p style="font-size:.9rem;line-height:1.75;color:var(--text-secondary);">
+              Inflammation of liver parenchyma from viral infection (Hepatitis A–E),
+              autoimmune processes, or toxic exposures. Chronic Hepatitis B and C
+              are leading causes of cirrhosis and hepatocellular carcinoma.
+            </p>
+          </div>
+          <div class="widget-card">
+            <div class="widget-title">Cirrhosis & HCC 🔬</div>
+            <p style="font-size:.9rem;line-height:1.75;color:var(--text-secondary);">
+              Advanced irreversible fibrosis with disrupted hepatic architecture.
+              Complications include portal hypertension, variceal bleeding, and
+              hepatocellular carcinoma (HCC). Surveillance every 6 months recommended.
+            </p>
+          </div>
+        </div>
+
+      </div>{# /dtab-home #}
+
+
+      {# ══════════════════════════════════════════
+         SCORES TAB — manual calculator (JS only)
+      ══════════════════════════════════════════ #}
+      <div id="dtab-scores" style="display:none;">
+        <div class="page-header">
+          <h2>Score Calculator</h2>
+          <p>Compute liver fibrosis scores for patient assessment</p>
+        </div>
+        <div class="widget-card" style="margin-bottom:1.25rem;">
+          <div class="widget-title">Patient Lab Values</div>
+          <div class="score-form-grid">
+            <div class="form-group"><label>Patient ID / Name</label><input type="text" id="ds-pid" placeholder="Patient identifier"></div>
+            <div class="form-group"><label>Age (years)</label><input type="number" id="ds-age" placeholder="e.g. 45" min="1" max="120"></div>
+            <div class="form-group"><label>AST (U/L)</label><input type="number" id="ds-ast" placeholder="e.g. 35" min="0"></div>
+            <div class="form-group"><label>ALT (U/L)</label><input type="number" id="ds-alt" placeholder="e.g. 40" min="0"></div>
+            <div class="form-group"><label>Platelets (×10⁹/L)</label><input type="number" id="ds-plt" placeholder="e.g. 200" min="0"></div>
+            <div class="form-group"><label>Albumin (g/dL)</label><input type="number" id="ds-alb" placeholder="e.g. 4.0" step="0.1" min="0"></div>
+            <div class="form-group"><label>BMI (kg/m²)</label><input type="number" id="ds-bmi" placeholder="e.g. 27.5" step="0.1" min="0"></div>
+            <div class="form-group"><label>Fasting Glucose (mg/dL)</label><input type="number" id="ds-glu" placeholder="≥8h fasting" min="0"></div>
+            <div class="form-group"><label>Fasting Insulin (μU/mL)</label><input type="number" id="ds-ins" placeholder="≥8h fasting" step="0.1" min="0"></div>
+          </div>
+          <div style="display:flex;gap:.75rem;margin-top:1rem;">
+            <button class="btn-compute" onclick="computeDocScores()">Compute Scores</button>
+            <button class="btn-outline" onclick="clearDocScoreForm()">Clear</button>
+          </div>
+        </div>
+        <div class="widget-card">
+          <div class="widget-title">Results</div>
+          <div class="results-grid">
+            <div class="result-box"><div class="result-score-name">FIB-4</div><div class="result-score-val" id="dr-fib4">—</div><div class="result-score-risk" id="dr-fib4-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">APRI</div><div class="result-score-val" id="dr-apri">—</div><div class="result-score-risk" id="dr-apri-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">NFS</div><div class="result-score-val" id="dr-nfs">—</div><div class="result-score-risk" id="dr-nfs-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">HOMA-IR</div><div class="result-score-val" id="dr-homa">—</div><div class="result-score-risk" id="dr-homa-r" style="color:var(--text-muted);">—</div></div>
+          </div>
+          <div class="note-box" style="margin-top:1rem;">
+            ℹ️ These results are for reference only and are not saved to any patient record.
+            To save, use the Flag button on a patient's entry.
+          </div>
+        </div>
+      </div>
+
+
+      {# ══════════════════════════════════════════
+         PATIENTS TAB — real patient list
+         Variables: patients, entries (all)
+      ══════════════════════════════════════════ #}
+      <div id="dtab-patients" style="display:none;">
+        <div class="page-header">
+          <h2>Patient Registry</h2>
+          <p>All patients currently registered on HepaCheck</p>
+        </div>
+
+        {% if not patients %}
+          <div class="widget-card" style="text-align:center;padding:3rem;">
+            <div style="font-size:3rem;margin-bottom:1rem;">👥</div>
+            <h3 style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:var(--text-primary);margin-bottom:.5rem;">
+              No patients registered yet
+            </h3>
+            <p style="color:var(--text-muted);font-size:.9rem;">
+              Patients will appear here once they create an account and log in.
+            </p>
+          </div>
+
+        {% else %}
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+            <div class="search-bar">
+              <input type="text" placeholder="Search patients..."
+                     oninput="searchPatients(this.value)" id="patient-search-input">
+            </div>
+            <span style="font-size:.88rem;color:var(--text-muted);">
+              {{ patients|length }} patient{{ 's' if patients|length != 1 else '' }} registered
+            </span>
+          </div>
+
+          <div id="patients-list">
+            {% for patient in patients %}
+              {# Build initials from username #}
+              {% set words = patient.username.split() %}
+              {% if words|length >= 2 %}
+                {% set initials = (words[0][0] + words[1][0])|upper %}
+              {% else %}
+                {% set initials = patient.username[:2]|upper %}
+              {% endif %}
+
+              {# Count this patient's entries and find their latest #}
+              {% set patient_entries = entries | selectattr('user_id', 'equalto', patient.id) | list %}
+              {% set latest = patient_entries[0] if patient_entries else none %}
+
+              <div class="patient-row" data-name="{{ patient.username|lower }}" data-email="{{ patient.email|lower }}">
+                <div class="patient-avatar">{{ initials }}</div>
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:.95rem;">{{ patient.username }}</div>
+                  <div style="font-size:.82rem;color:var(--text-muted);">
+                    {{ patient.email }}
+                    {% if latest %}
+                      · Last entry: {{ latest.created_at.strftime('%d %b %Y') }}
+                    {% else %}
+                      · No entries yet
+                    {% endif %}
+                  </div>
+                </div>
+
+                {# Risk badge from latest FIB-4 #}
+                {% if latest and latest.fib4 is not none %}
+                  {% if latest.fib4 < 1.30 %}
+                    <span class="risk-pill low">Low Risk</span>
+                    <span style="font-size:.82rem;color:var(--text-muted);margin-left:.75rem;">FIB-4: {{ "%.2f"|format(latest.fib4) }}</span>
+                  {% elif latest.fib4 < 2.67 %}
+                    <span class="risk-pill moderate">Moderate</span>
+                    <span style="font-size:.82rem;color:var(--text-muted);margin-left:.75rem;">FIB-4: {{ "%.2f"|format(latest.fib4) }}</span>
+                  {% else %}
+                    <span class="risk-pill high">High Risk</span>
+                    <span style="font-size:.82rem;color:var(--text-muted);margin-left:.75rem;">FIB-4: {{ "%.2f"|format(latest.fib4) }}</span>
+                  {% endif %}
+                {% else %}
+                  <span class="risk-pill" style="background:var(--surface);color:var(--text-muted);border:1px solid var(--border);">No Data</span>
+                {% endif %}
+
+                <a href="/doctor/patient/{{ patient.id }}"
+                   style="margin-left:1rem;font-size:.8rem;padding:.3rem .8rem;"
+                   class="btn-outline">View →</a>
+              </div>
+            {% endfor %}
+          </div>
+
+        {% endif %}
+      </div>{# /dtab-patients #}
+
+
+      {# ══════════════════════════════════════════
+         PATIENT DETAIL VIEW
+         Shown when navigating to /doctor/patient/:id
+         Variables: detail_patient, detail_entries
+      ══════════════════════════════════════════ #}
+      {% if detail_patient %}
+      <div id="dtab-patient-detail" style="display:none;">
+        <div class="page-header" style="display:flex;align-items:center;gap:1rem;">
+          <a href="/doctor/home" class="btn-outline" style="font-size:.82rem;padding:.3rem .75rem;">← Back</a>
+          <div>
+            <h2>{{ detail_patient.username }}</h2>
+            <p>{{ detail_patient.email }} · Patient detail view</p>
+          </div>
+        </div>
+
+        {% if not detail_entries %}
+          <div class="widget-card" style="text-align:center;padding:2.5rem;">
+            <div style="font-size:2.5rem;margin-bottom:.75rem;">📋</div>
+            <p style="color:var(--text-muted);">This patient has not submitted any score entries yet.</p>
+          </div>
+        {% else %}
+          {# KPIs for this patient #}
+          {% set latest_e = detail_entries[0] %}
+          <div class="kpi-grid" style="margin-bottom:1.25rem;">
+            <div class="kpi-card green">
+              <div class="kpi-label">Latest FIB-4</div>
+              <div class="kpi-value">{{ "%.2f"|format(latest_e.fib4) if latest_e.fib4 else '—' }}</div>
+              {% if latest_e.fib4 %}
+                <div class="kpi-badge {% if latest_e.fib4 < 1.30 %}low{% elif latest_e.fib4 < 2.67 %}mod{% else %}high{% endif %}">
+                  {% if latest_e.fib4 < 1.30 %}Low{% elif latest_e.fib4 < 2.67 %}Moderate{% else %}High{% endif %}
+                </div>
+              {% endif %}
+            </div>
+            <div class="kpi-card amber">
+              <div class="kpi-label">Latest APRI</div>
+              <div class="kpi-value">{{ "%.3f"|format(latest_e.apri) if latest_e.apri else '—' }}</div>
+            </div>
+            <div class="kpi-card blue">
+              <div class="kpi-label">Latest NFS</div>
+              <div class="kpi-value">{{ "%.3f"|format(latest_e.nfs) if latest_e.nfs else '—' }}</div>
+            </div>
+            <div class="kpi-card teal">
+              <div class="kpi-label">Total Entries</div>
+              <div class="kpi-value">{{ detail_entries|length }}</div>
+              <div class="kpi-trend">Since registration</div>
+            </div>
+          </div>
+
+          <div class="widget-card">
+            <div class="widget-title">Score History</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>FIB-4</th>
+                  <th>APRI</th>
+                  <th>NFS</th>
+                  <th>HOMA-IR</th>
+                  <th>Risk</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for entry in detail_entries %}
+                <tr>
+                  <td style="font-size:.82rem;color:var(--text-muted);">
+                    {{ entry.created_at.strftime('%d %b %Y, %H:%M') }}
+                  </td>
+                  <td>{{ "%.2f"|format(entry.fib4) if entry.fib4 else '—' }}</td>
+                  <td>{{ "%.3f"|format(entry.apri) if entry.apri else '—' }}</td>
+                  <td>{{ "%.3f"|format(entry.nfs) if entry.nfs else '—' }}</td>
+                  <td>{{ "%.2f"|format(entry.homa_ir) if entry.homa_ir else '—' }}</td>
+                  <td>
+                    {% if entry.fib4 %}
+                      {% if entry.fib4 < 1.30 %}<span class="risk-pill low">Low</span>
+                      {% elif entry.fib4 < 2.67 %}<span class="risk-pill moderate">Moderate</span>
+                      {% else %}<span class="risk-pill high">High</span>{% endif %}
+                    {% else %}—{% endif %}
+                  </td>
+                  <td>
+                    <form method="POST" action="/doctor/flag" style="display:inline;">
+                      <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                      <button type="submit" class="btn-outline"
+                              style="font-size:.75rem;padding:.25rem .6rem;">
+                        Flag
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+      {% endif %}{# /detail_patient #}
+
+
+      {# ══════════════════════════════════════════
+         EMERGENCY FLAG TAB — JS-driven (localStorage)
+         In production: hook addFlag() / renderFlags()
+         to POST /doctor/flag and GET /doctor/flags
+      ══════════════════════════════════════════ #}
+      <div id="dtab-emergency-flag" style="display:none;">
+        <div class="page-header">
+          <h2>Emergency Flag</h2>
+          <p>Create and manage urgent clinical alerts for patients</p>
+        </div>
+        <div class="emergency-flag-form" style="margin-bottom:1.25rem;">
+          <div class="widget-title">Create a New Flag</div>
+          <div class="flag-form-grid">
+            <div class="form-group"><label>Date</label><input type="date" id="ef-date"></div>
+            <div class="form-group"><label>Time</label><input type="time" id="ef-time"></div>
+            <div class="form-group">
+              <label>Patient</label>
+              <select id="ef-patient">
+                <option value="">Select patient…</option>
+                {% for patient in patients %}
+                  <option value="{{ patient.username }}">{{ patient.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group"><label>Severity</label>
+              <select id="ef-severity"><option>High</option><option>Medium</option><option>Low</option></select>
+            </div>
+            <div class="form-group"><label>Category</label>
+              <select id="ef-category">
+                <option>Acute deterioration</option>
+                <option>Lab abnormality</option>
+                <option>Medication</option>
+                <option>Follow-up required</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="ef-notes"
+                      style="width:100%;min-height:80px;padding:.7rem;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.95rem;outline:none;resize:vertical;"
+                      placeholder="Clinical notes..."></textarea>
+          </div>
+          <button class="btn-compute" onclick="addFlag()">Add Flag</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="tab-bar" style="margin-bottom:0;">
+            <button class="tab-btn active" id="flag-tab-open" onclick="switchFlagTab('open')">Open</button>
+            <button class="tab-btn" id="flag-tab-resolved" onclick="switchFlagTab('resolved')">Resolved</button>
+          </div>
+          <div class="search-bar">
+            <input type="text" placeholder="Search flags..." oninput="searchFlags(this.value)">
+          </div>
+        </div>
+        <div id="flags-list">
+          <div class="empty-state"><div class="empty-icon">🚨</div><p>No open flags. Add a flag above.</p></div>
+        </div>
+        <div style="display:flex;gap:.75rem;margin-top:1rem;">
+          <button class="btn-outline" onclick="renderFlags()">↻ Refresh</button>
+          <button class="btn-danger" onclick="clearFlags()">🗑 Clear All</button>
+        </div>
+      </div>
+
+
+      {# ══════════════════════════════════════════
+         APPOINTMENTS TAB — JS-driven (localStorage)
+      ══════════════════════════════════════════ #}
+      <div id="dtab-appointments" style="display:none;">
+        <div class="page-header">
+          <h2>Appointments</h2>
+          <p>Manage and schedule patient consultations</p>
+        </div>
+        <div class="emergency-flag-form" style="margin-bottom:1.25rem;">
+          <div class="widget-title">Create New Appointment</div>
+          <div class="appt-form-grid">
+            <div class="form-group"><label>Date</label><input type="date" id="ap-date"></div>
+            <div class="form-group"><label>Time</label><input type="time" id="ap-time"></div>
+            <div class="form-group">
+              <label>Patient</label>
+              <select id="ap-patient">
+                <option value="">Select patient…</option>
+                {% for patient in patients %}
+                  <option value="{{ patient.username }}">{{ patient.username }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-group"><label>Type</label>
+              <select id="ap-type">
+                <option>Consult</option><option>Follow-up</option>
+                <option>Review</option><option>Emergency</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:300px;">
+            <label>Location</label>
+            <select id="ap-location">
+              <option>Clinic</option><option>Hospital</option>
+              <option>Telemedicine</option><option>Home Visit</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notes</label>
+            <textarea id="ap-notes"
+                      style="width:100%;min-height:70px;padding:.7rem;border:1.5px solid var(--border);border-radius:var(--radius);font-family:inherit;font-size:.95rem;outline:none;resize:vertical;"></textarea>
+          </div>
+          <button class="btn-compute" onclick="addAppointment()">Add Appointment</button>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div class="tab-bar" style="margin-bottom:0;">
+            <button class="tab-btn active" id="appt-tab-upcoming" onclick="switchApptTab('upcoming')">Upcoming</button>
+            <button class="tab-btn" id="appt-tab-past" onclick="switchApptTab('past')">Past</button>
+          </div>
+          <div class="search-bar">
+            <input type="text" placeholder="Search appointments..." oninput="searchAppts(this.value)">
+          </div>
+        </div>
+        <div id="appts-list">
+          <div class="empty-state"><div class="empty-icon">📅</div><p>No upcoming appointments.</p></div>
+        </div>
+        <div style="display:flex;gap:.75rem;margin-top:1rem;">
+          <button class="btn-outline" onclick="renderAppointments()">↻ Refresh</button>
+          <button class="btn-danger" onclick="clearAppointments()">🗑 Clear All</button>
+        </div>
+      </div>
+
+
+      {# ══════════════════════════════════════════
+         CONTACT TAB
+      ══════════════════════════════════════════ #}
+      <div id="dtab-contact" style="display:none;">
+        <div class="page-header">
+          <h2>Contact & Platform Info</h2>
+          <p>Technical support and institutional contact details</p>
+        </div>
+        <div class="contact-card">
+          <div style="background:var(--hc-blue-light);border-radius:var(--radius);padding:1.25rem;">
+            <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--hc-blue);margin-bottom:.75rem;">
+              Institutional Contact
+            </p>
+            <p><strong>Khayati Bhrdwaj</strong><br>
+               <a href="mailto:khayati.bhrdwaj@s.amity.edu" style="color:var(--hc-blue);">khayati.bhrdwaj@s.amity.edu</a></p>
+            <hr class="contact-divider">
+            <p><strong>Dr. (Professor) Ritu Chauhan</strong><br>
+               <a href="mailto:rchauhan@amity.edu" style="color:var(--hc-blue);">rchauhan@amity.edu</a></p>
+            <p style="margin-top:.75rem;font-size:.88rem;color:var(--text-muted);">
+              AI and IoT Lab · Centre for Computational Biology and Bioinformatics<br>
+              Amity University, Noida, India
+            </p>
+          </div>
+          <div class="disclaimer-box">
+            <p>⚠️ HepaCheck is a research-oriented decision-support tool.
+               Clinical decisions must be made by qualified clinicians using full clinical context.
+               Do not rely solely on computed scores for patient management.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>{# /main-content #}
+  </div>{# /app-content #}
+</div>{# /page-doctor #}
+
+
+{# ══════════════════════════════════════════════
+   JAVASCRIPT
+   Injected as Jinja block so it can use template
+   variables (e.g. active_tab for deep-linking)
+══════════════════════════════════════════════ #}
+<script>
+/* ── Tab routing ── */
+function showDoctorTab(tab) {
+  document.querySelectorAll('[id^="dtab-"]').forEach(el => el.style.display = 'none');
+  const target = document.getElementById('dtab-' + tab);
+  if (target) target.style.display = '';
+  document.querySelectorAll('#doctor-nav .nav-link').forEach(l => l.classList.remove('active'));
+  const map = { home:0, scores:1, patients:2, 'emergency-flag':3, appointments:4, contact:5 };
+  const links = document.querySelectorAll('#doctor-nav .nav-link');
+  if (map[tab] !== undefined) links[map[tab]].classList.add('active');
+  if (tab === 'appointments') renderAppointments();
+  if (tab === 'emergency-flag') renderFlags();
+}
+
+/* ── Open correct tab on load — reads data from hidden element ── */
+document.addEventListener('DOMContentLoaded', () => {
+  const cfg = document.getElementById('doctor-page-config');
+  const serverTab   = cfg ? cfg.dataset.tab    : 'home';
+  const showDetail  = cfg ? cfg.dataset.detail  : '';
+  if (showDetail === 'true') {
+    showDoctorTab('patients');
+    const detail = document.getElementById('dtab-patient-detail');
+    if (detail) {
+      document.querySelectorAll('[id^="dtab-"]').forEach(el => el.style.display = 'none');
+      detail.style.display = '';
+    }
+  } else {
+    showDoctorTab(serverTab);
+  }
+  document.querySelectorAll('.risk-bar').forEach(el => {
+    el.style.width = (el.dataset.pct || 0) + '%';
+  });
+  updateDocStats();
+});
+
+/* ── Patient search (client-side on rendered rows) ── */
+function searchPatients(val) {
+  document.querySelectorAll('#patients-list .patient-row').forEach(row => {
+    const name  = row.dataset.name  || '';
+    const email = row.dataset.email || '';
+    row.style.display = (name + email).includes(val.toLowerCase()) ? '' : 'none';
+  });
+}
+
+/* ── Score calculator (JS only, no save) ── */
+function calcScores(age, ast, alt, plt, alb, bmi, glu, ins) {
+  const fib4 = plt > 0 && alt > 0 ? (age * ast) / (plt * Math.sqrt(alt)) : null;
+  const apri  = plt > 0 ? (ast / 40 * 100) / plt : null;
+  const nfs   = (age && bmi && plt && alb && ast && alt)
+    ? -1.675 + 0.037*age + 0.094*bmi + 0.99*(ast/alt) - 0.013*plt - 0.66*alb
+    : null;
+  const homa  = glu && ins ? (glu * ins) / 405 : null;
+  return { fib4, apri, nfs, homa };
+}
+
+function riskFib4(v) { return v < 1.30 ? 'Low' : v < 2.67 ? 'Moderate' : 'High'; }
+function riskApri(v) { return v < 0.5  ? 'Low' : v < 1.5  ? 'Moderate' : 'High'; }
+function riskNfs(v)  { return v < -1.455 ? 'Low': v < 0.676 ? 'Moderate' : 'High'; }
+function riskHoma(v) { return v < 2.5  ? 'Normal' : v < 5.0 ? 'Elevated' : 'High'; }
+function riskColor(r){ return r==='Low'||r==='Normal' ? 'var(--hc-green)' : r==='Moderate'||r==='Elevated' ? 'var(--hc-amber)' : 'var(--hc-red)'; }
+
+function computeDocScores() {
+  const age=+document.getElementById('ds-age').value,
+        ast=+document.getElementById('ds-ast').value,
+        alt=+document.getElementById('ds-alt').value,
+        plt=+document.getElementById('ds-plt').value,
+        alb=+document.getElementById('ds-alb').value,
+        bmi=+document.getElementById('ds-bmi').value,
+        glu=+document.getElementById('ds-glu').value,
+        ins=+document.getElementById('ds-ins').value;
+  const {fib4,apri,nfs,homa} = calcScores(age,ast,alt,plt,alb,bmi,glu,ins);
+  const set = (id, val, rFn) => {
+    if (val !== null) {
+      document.getElementById('dr-'+id).textContent = val.toFixed(id==='apri'||id==='nfs'?3:2);
+      const r = rFn(val);
+      const rel = document.getElementById('dr-'+id+'-r');
+      rel.textContent = r; rel.style.color = riskColor(r);
+    }
+  };
+  set('fib4', fib4, riskFib4);
+  set('apri', apri, riskApri);
+  set('nfs',  nfs,  riskNfs);
+  set('homa', homa, riskHoma);
+}
+
+function clearDocScoreForm() {
+  ['ds-pid','ds-age','ds-ast','ds-alt','ds-plt','ds-alb','ds-bmi','ds-glu','ds-ins']
+    .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['fib4','apri','nfs','homa'].forEach(id => {
+    document.getElementById('dr-'+id).textContent = '—';
+    const r = document.getElementById('dr-'+id+'-r');
+    r.textContent = '—'; r.style.color = 'var(--text-muted)';
+  });
+}
+
+/* ── Emergency flags (localStorage) ── */
+let flagTab = 'open';
+
+function addFlag() {
+  const patient = document.getElementById('ef-patient');
+  const patientVal = patient.tagName === 'SELECT'
+    ? patient.options[patient.selectedIndex].text
+    : patient.value;
+  if (!patientVal || patientVal === 'Select patient…') {
+    alert('Please select a patient.'); return;
+  }
+  const flag = {
+    id: Date.now(),
+    date: document.getElementById('ef-date').value || '—',
+    time: document.getElementById('ef-time').value || '—',
+    patient: patientVal,
+    severity: document.getElementById('ef-severity').value,
+    category: document.getElementById('ef-category').value,
+    notes: document.getElementById('ef-notes').value,
+    status: 'open',
+  };
+  const flags = JSON.parse(localStorage.getItem('hepacheck_flags') || '[]');
+  flags.unshift(flag);
+  localStorage.setItem('hepacheck_flags', JSON.stringify(flags));
+  document.getElementById('ef-date').value = '';
+  document.getElementById('ef-time').value = '';
+  document.getElementById('ef-patient').selectedIndex = 0;
+  document.getElementById('ef-notes').value = '';
+  renderFlags();
+  updateDocStats();
+}
+
+function renderFlags(filter) {
+  const flags  = JSON.parse(localStorage.getItem('hepacheck_flags') || '[]');
+  const shown  = flags
+    .filter(f => f.status === flagTab)
+    .filter(f => !filter || (f.patient+f.notes+f.category).toLowerCase().includes(filter.toLowerCase()));
+  const wrap   = document.getElementById('flags-list');
+  if (!shown.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🚨</div><p>No ${flagTab} flags.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = shown.map(f => `
+    <div class="flag-list-item">
+      <span class="flag-severity ${f.severity.toLowerCase()}">${f.severity}</span>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:.9rem;">
+          ${f.patient}
+          <span style="font-weight:400;color:var(--text-muted);font-size:.82rem;"> — ${f.category}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);">
+          ${f.date} ${f.time}${f.notes ? ' · ' + f.notes : ''}
+        </div>
+      </div>
+      ${flagTab==='open'
+        ? `<button class="btn-outline" style="font-size:.78rem;padding:.3rem .7rem;color:var(--hc-green);border-color:var(--hc-green);"
+                  onclick="resolveFlag(${f.id})">✓ Resolve</button>`
+        : ''}
+    </div>`).join('');
+  updateDocStats();
+}
+
+function resolveFlag(id) {
+  const flags = JSON.parse(localStorage.getItem('hepacheck_flags') || '[]');
+  const f = flags.find(f => f.id === id);
+  if (f) { f.status = 'resolved'; localStorage.setItem('hepacheck_flags', JSON.stringify(flags)); }
+  renderFlags();
+}
+
+function clearFlags() {
+  if (!confirm('Clear all flags?')) return;
+  localStorage.removeItem('hepacheck_flags');
+  renderFlags();
+}
+
+function switchFlagTab(tab) {
+  flagTab = tab;
+  document.getElementById('flag-tab-open').classList.toggle('active', tab==='open');
+  document.getElementById('flag-tab-resolved').classList.toggle('active', tab==='resolved');
+  renderFlags();
+}
+
+function searchFlags(val) { renderFlags(val); }
+
+/* ── Appointments (localStorage) ── */
+let apptTab = 'upcoming';
+
+function addAppointment() {
+  const patient = document.getElementById('ap-patient');
+  const patientVal = patient.tagName === 'SELECT'
+    ? patient.options[patient.selectedIndex].text
+    : patient.value;
+  if (!patientVal || patientVal === 'Select patient…') {
+    alert('Please select a patient.'); return;
+  }
+  const appt = {
+    id: Date.now(),
+    date: document.getElementById('ap-date').value || '—',
+    time: document.getElementById('ap-time').value || '—',
+    patient: patientVal,
+    type: document.getElementById('ap-type').value,
+    location: document.getElementById('ap-location').value,
+    notes: document.getElementById('ap-notes').value,
+    status: 'upcoming',
+  };
+  const appts = JSON.parse(localStorage.getItem('hepacheck_appts') || '[]');
+  appts.unshift(appt);
+  localStorage.setItem('hepacheck_appts', JSON.stringify(appts));
+  document.getElementById('ap-date').value = '';
+  document.getElementById('ap-time').value = '';
+  document.getElementById('ap-patient').selectedIndex = 0;
+  document.getElementById('ap-notes').value = '';
+  renderAppointments();
+  updateDocStats();
+}
+
+function renderAppointments(filter) {
+  const appts = JSON.parse(localStorage.getItem('hepacheck_appts') || '[]');
+  const shown = appts
+    .filter(a => a.status === apptTab)
+    .filter(a => !filter || (a.patient+a.notes+a.type).toLowerCase().includes(filter.toLowerCase()));
+  const wrap = document.getElementById('appts-list');
+  if (!shown.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">📅</div><p>No ${apptTab} appointments.</p></div>`;
+    return;
+  }
+  wrap.innerHTML = shown.map(a => `
+    <div class="flag-list-item">
+      <div style="text-align:center;min-width:65px;">
+        <div style="font-size:.78rem;font-weight:700;color:var(--hc-blue);">${a.date}</div>
+        <div style="font-size:.75rem;color:var(--text-muted);">${a.time}</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:.9rem;">
+          ${a.patient}
+          <span class="risk-pill low" style="font-size:.7rem;margin-left:.4rem;">${a.type}</span>
+        </div>
+        <div style="font-size:.78rem;color:var(--text-muted);">${a.location}${a.notes?' · '+a.notes:''}</div>
+      </div>
+      ${apptTab==='upcoming'
+        ? `<button class="btn-outline" style="font-size:.78rem;padding:.3rem .7rem;"
+                  onclick="markApptPast(${a.id})">✓ Done</button>`
+        : ''}
+    </div>`).join('');
+  updateDocStats();
+}
+
+function markApptPast(id) {
+  const appts = JSON.parse(localStorage.getItem('hepacheck_appts') || '[]');
+  const a = appts.find(a => a.id === id);
+  if (a) { a.status = 'past'; localStorage.setItem('hepacheck_appts', JSON.stringify(appts)); }
+  renderAppointments();
+}
+
+function clearAppointments() {
+  if (!confirm('Clear all appointments?')) return;
+  localStorage.removeItem('hepacheck_appts');
+  renderAppointments();
+}
+
+function switchApptTab(tab) {
+  apptTab = tab;
+  document.getElementById('appt-tab-upcoming').classList.toggle('active', tab==='upcoming');
+  document.getElementById('appt-tab-past').classList.toggle('active', tab==='past');
+  renderAppointments();
+}
+
+function searchAppts(val) { renderAppointments(val); }
+
+/* ── Update KPI counters from localStorage ── */
+function updateDocStats() {
+  const flags = JSON.parse(localStorage.getItem('hepacheck_flags') || '[]');
+  const appts = JSON.parse(localStorage.getItem('hepacheck_appts') || '[]');
+  /* These elements only exist if stats block rendered (i.e. home tab loaded) */
+  const flagEl = document.getElementById('doc-open-flags');
+  const apptEl = document.getElementById('doc-upcoming-appts');
+  /* Server already gave us open_flags count — add localStorage ones on top */
+  const cfg2 = document.getElementById('doctor-page-config');
+  const serverFlags = cfg2 ? parseInt(cfg2.dataset.openFlags || '0', 10) : 0;
+  const localFlags  = flags.filter(f => f.status === 'open').length;
+  if (flagEl) flagEl.textContent = serverFlags + localFlags;
+  if (apptEl) apptEl.textContent = appts.filter(a => a.status === 'upcoming').length;
+}
+</script>
+
+{% endblock %}

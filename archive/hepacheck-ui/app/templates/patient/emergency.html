@@ -1,0 +1,18 @@
+﻿{% extends "patient/base_patient.html" %}
+
+{% block content %}
+
+<h4>Emergency Contacts</h4>
+
+<div class="row">
+    {% for c in contacts %}
+    <div class="col-md-4">
+        <div class="card p-3 shadow-sm">
+            <h6>{{ c.label }}</h6>
+            <h5>{{ c.value }}</h5>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

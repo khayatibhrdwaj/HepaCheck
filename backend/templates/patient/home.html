@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div id="page-patient" class="page active">
+
+  <!-- ── Top white banner ── -->
+  <div class="top-banner" height="160">
+    <img src="/static/images/logo.png" alt="HepaCheck" class="banner-logo" height="120">
+    <div class="banner-role">
+      <img src="/static/images/Patient.png" alt="Patient" height="80">
+    </div>
+  </div>
+
+  <!-- ── Nav bar ── -->
+  <header class="app-header">
+    <nav class="header-nav" id="patient-nav" style="margin-left:0;">
+      <span class="nav-link active" id="nav-home"          onclick="showPatientTab('home')">Home</span>
+      <span class="nav-link"        id="nav-scores"        onclick="showPatientTab('scores')">Scores</span>
+      <span class="nav-link"        id="nav-reports"       onclick="showPatientTab('reports')">Reports</span>
+      <span class="nav-link"        id="nav-info"          onclick="showPatientTab('info')">Info</span>
+      <span class="nav-link"        id="nav-community"     onclick="showPatientTab('community')">Community</span>
+      <span class="nav-link"        id="nav-emergency"     onclick="showPatientTab('emergency')">Emergency</span>
+      <span class="nav-link"        id="nav-choose-doctor" onclick="goChooseDoctor()" tabindex="-1">Choose Doctor</span>
+      <span class="nav-link"        id="nav-contact"       onclick="showPatientTab('contact')">Contact</span>
+    </nav>
+    <div class="header-right" style="margin-left:auto;">
+      <span id="patient-name-badge" style="font-size:.9rem;color:#ccc;">{{ user.username }}</span>
+      <a href="/logout" class="btn-logout">Logout</a>
+    </div>
+  </header>
+
+  <div class="app-content">
+    <div class="main-content" id="patient-content">
+
+      <!-- ══ HOME TAB ══ -->
+      <div id="ptab-home">
+        <div class="page-header">
+          <h2>Your Liver Health Dashboard</h2>
+          <p>Overview of your current risk profile and liver health metrics</p>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card green"><div class="kpi-icon">📊</div><div class="kpi-label">FIB-4 Score</div><div class="kpi-value" id="home-fib4">—</div><div class="kpi-badge low" id="home-fib4-risk">No data yet</div></div>
+          <div class="kpi-card amber"><div class="kpi-icon">🩸</div><div class="kpi-label">APRI Score</div><div class="kpi-value" id="home-apri">—</div><div class="kpi-badge low" id="home-apri-risk">No data yet</div></div>
+          <div class="kpi-card blue"><div class="kpi-icon">📉</div><div class="kpi-label">NFS Score</div><div class="kpi-value" id="home-nfs">—</div><div class="kpi-badge low" id="home-nfs-risk">No data yet</div></div>
+          <div class="kpi-card teal"><div class="kpi-icon">💉</div><div class="kpi-label">HOMA-IR</div><div class="kpi-value" id="home-homa">—</div><div class="kpi-badge low" id="home-homa-risk">No data yet</div></div>
+        </div>
+        <div class="dashboard-grid">
+          <div class="widget-card">
+            <div class="widget-title">Score History <span class="badge" id="history-count-badge">0 entries</span></div>
+            <div id="home-history-chart"><div class="empty-state"><div class="empty-icon">📈</div><p>Compute and save your scores to see history here.</p></div></div>
+          </div>
+          <div class="widget-card">
+            <div class="widget-title">Risk Gauge</div>
+            <div class="gauge-wrap">
+              <svg class="gauge-svg" viewBox="0 0 160 100">
+                <path d="M 20 85 A 60 60 0 0 1 140 85" fill="none" stroke="#e8f5e9" stroke-width="16" stroke-linecap="round"/>
+                <path id="gauge-arc" d="M 20 85 A 60 60 0 0 1 80 25" fill="none" stroke="#3d8b37" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 200"/>
+                <circle cx="80" cy="85" r="5" fill="#3d8b37"/>
+                <text x="80" y="72" text-anchor="middle" font-size="10" fill="#4a6741" font-family="DM Sans,sans-serif" id="gauge-pct-text">—</text>
+              </svg>
+              <div class="gauge-label" id="gauge-risk-label">No Assessment</div>
+              <div class="gauge-sub">Based on FIB-4 score</div>
+            </div>
+          </div>
+        </div>
+        <div class="dashboard-grid halves">
+          <div class="widget-card">
+            <div class="widget-title">What is NAFLD?</div>
+            <p style="font-size:1rem;line-height:1.75;color:var(--text-secondary);"><strong>Nonalcoholic Fatty Liver Disease (NAFLD)</strong> is a condition where excess fat builds up in the liver in individuals who drink little to no alcohol. It's the most common chronic liver disease worldwide.</p>
+            <p style="font-size:1rem;line-height:1.75;color:var(--text-secondary);margin-top:.75rem;">If left unmanaged, NAFLD may progress to <strong>NASH</strong> → <strong>Fibrosis</strong> → <strong>Cirrhosis</strong> → Liver Failure.</p>
+          </div>
+          <div class="widget-card">
+            <div class="widget-title">Score Benchmarks</div>
+            <div style="display:flex;flex-direction:column;gap:.8rem;margin-top:.25rem;">
+              <div><div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.3rem;"><span style="color:var(--text-secondary);">FIB-4</span><span style="color:var(--text-muted);">Low &lt;1.30 · High &gt;2.67</span></div><div style="height:8px;background:linear-gradient(to right,#3d8b37,#b45309,#e53e3e);border-radius:3px;"></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.3rem;"><span style="color:var(--text-secondary);">APRI</span><span style="color:var(--text-muted);">Low &lt;0.5 · High &gt;1.5</span></div><div style="height:8px;background:linear-gradient(to right,#3d8b37,#b45309,#e53e3e);border-radius:3px;"></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.3rem;"><span style="color:var(--text-secondary);">NFS</span><span style="color:var(--text-muted);">Low &lt;-1.455 · High &gt;0.676</span></div><div style="height:8px;background:linear-gradient(to right,#3d8b37,#b45309,#e53e3e);border-radius:3px;"></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:.3rem;"><span style="color:var(--text-secondary);">HOMA-IR</span><span style="color:var(--text-muted);">Normal &lt;2.5 · High &gt;5.0</span></div><div style="height:8px;background:linear-gradient(to right,#3d8b37,#b45309,#e53e3e);border-radius:3px;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SCORES TAB ══ -->
+      <div id="ptab-scores" style="display:none;">
+        <div class="page-header"><h2>Compute Liver Risk Scores</h2><p>Enter your lab values to calculate FIB-4, APRI, NFS and HOMA-IR</p></div>
+        <div class="widget-card" style="margin-bottom:1.25rem;">
+          <div class="widget-title">Lab Values</div>
+          <div class="score-form-grid">
+            <div class="form-group"><label>Age (years)</label><input type="number" id="s-age" placeholder="e.g. 45" min="1" max="120"></div>
+            <div class="form-group"><label>AST (U/L)</label><input type="number" id="s-ast" placeholder="e.g. 35" min="0"></div>
+            <div class="form-group"><label>ALT (U/L)</label><input type="number" id="s-alt" placeholder="e.g. 40" min="0"></div>
+            <div class="form-group"><label>Platelets (×10⁹/L)</label><input type="number" id="s-plt" placeholder="e.g. 200" min="0"></div>
+            <div class="form-group"><label>Albumin (g/dL)</label><input type="number" id="s-alb" placeholder="e.g. 4.0" step="0.1" min="0"></div>
+            <div class="form-group"><label>BMI (kg/m²)</label><input type="number" id="s-bmi" placeholder="e.g. 27.5" step="0.1" min="0"></div>
+            <div class="form-group"><label>Fasting Glucose (mg/dL)</label><input type="number" id="s-glu" placeholder="≥8h fasting" min="0"></div>
+            <div class="form-group"><label>Fasting Insulin (μU/mL)</label><input type="number" id="s-ins" placeholder="≥8h fasting" min="0" step="0.1"></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:.35rem;"><label style="display:flex;align-items:center;gap:.5rem;cursor:pointer;font-size:.95rem;font-weight:500;color:var(--text-secondary);"><input type="checkbox" id="s-diabetes" style="width:18px;height:18px;accent-color:var(--hc-green);"> Diabetes / IFG</label></div>
+          </div>
+          <div class="note-box">ℹ️ Fasting plasma glucose and serum insulin (≥8h fasting) are required for accurate HOMA-IR computation.</div>
+          <div style="display:flex;gap:.75rem;margin-top:1.25rem;">
+            <button class="btn-compute" onclick="computeScores()">Compute Scores</button>
+            <button class="btn-save" onclick="saveScores()">Save to History</button>
+            <button class="btn-outline" onclick="clearScoreForm()">Clear</button>
+          </div>
+        </div>
+        <div class="widget-card">
+          <div class="widget-title">Risk Profile</div>
+          <div class="results-grid">
+            <div class="result-box"><div class="result-score-name">FIB-4</div><div class="result-score-val" id="r-fib4">—</div><div class="result-score-risk" id="r-fib4-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">APRI</div><div class="result-score-val" id="r-apri">—</div><div class="result-score-risk" id="r-apri-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">NFS</div><div class="result-score-val" id="r-nfs">—</div><div class="result-score-risk" id="r-nfs-r" style="color:var(--text-muted);">—</div></div>
+            <div class="result-box"><div class="result-score-name">HOMA-IR</div><div class="result-score-val" id="r-homa">—</div><div class="result-score-risk" id="r-homa-r" style="color:var(--text-muted);">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ REPORTS TAB ══ -->
+      <div id="ptab-reports" style="display:none;">
+        <div class="page-header"><h2>Score History</h2><p>All your saved liver risk score computations</p></div>
+        <div class="reports-actions"><button class="btn-outline" onclick="renderReports()">↻ Refresh</button><button class="btn-danger" onclick="clearReports()">🗑 Clear All</button></div>
+        <div class="widget-card"><div id="reports-table-wrap"><div class="empty-state"><div class="empty-icon">📋</div><p>No saved results yet.</p></div></div></div>
+      </div>
+
+      <!-- ══ INFO TAB ══ -->
+      <div id="ptab-info" style="display:none;">
+        <div class="page-header"><h2>NAFLD Education Centre</h2><p>Learn about fatty liver disease, its progression, and how to manage it</p></div>
+        <div class="info-accordion">
+          <div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span><span class="acc-emoji">🧬</span>What is NAFLD?</span><span class="acc-chevron">▼</span></div><div class="acc-body open"><strong>Nonalcoholic Fatty Liver Disease (NAFLD)</strong> is a condition where excess fat builds up in the liver in people who drink little to no alcohol. It affects up to 25% of the global population.</div></div>
+          <div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span><span class="acc-emoji">📈</span>How NAFLD Progresses</span><span class="acc-chevron">▼</span></div><div class="acc-body">NAFLD may progress to <strong>NASH</strong> → <strong>Fibrosis</strong> → <strong>Cirrhosis</strong> → Liver failure if left unmanaged.</div></div>
+          <div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span><span class="acc-emoji">🤔</span>What Causes It?</span><span class="acc-chevron">▼</span></div><div class="acc-body">Key risk factors: <strong>obesity</strong>, <strong>type 2 diabetes</strong>, <strong>insulin resistance</strong>, <strong>high cholesterol</strong>, and <strong>metabolic syndrome</strong>.</div></div>
+          <div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span><span class="acc-emoji">💊</span>How to Manage NAFLD</span><span class="acc-chevron">▼</span></div><div class="acc-body">Losing 7–10% of body weight through diet and exercise significantly reduces liver fat. A Mediterranean diet and 150+ min/week aerobic activity are recommended.</div></div>
+          <div class="acc-item"><div class="acc-header" onclick="toggleAcc(this)"><span><span class="acc-emoji">🔬</span>Understanding Your Scores</span><span class="acc-chevron">▼</span></div><div class="acc-body"><strong>FIB-4</strong>: &lt;1.30 low, &gt;2.67 high. <strong>APRI</strong>: &lt;0.5 low, &gt;1.5 high. <strong>NFS</strong>: &lt;-1.455 low, &gt;0.676 high. <strong>HOMA-IR</strong>: normal &lt;2.5, high &gt;5.0.</div></div>
+        </div>
+      </div>
+
+      <!-- ══ COMMUNITY TAB — DB-backed, real accounts only ══ -->
+      <div id="ptab-community" style="display:none;">
+        <div class="page-header"><h2>Community Forum</h2><p>Connect with other patients — posts are from real, verified accounts</p></div>
+        <div class="forum-layout">
+          <div>
+            <!-- Compose -->
+            <div class="forum-compose">
+              <div class="widget-title" style="margin-bottom:.75rem;">Share with the community</div>
+              <textarea id="forum-post-text" placeholder="Ask a question, share your experience, or offer support..."></textarea>
+              <div class="forum-compose-actions">
+                <div class="forum-tags" id="forum-tag-selector">
+                  <span class="forum-tag selected" onclick="selectTag(this,'Question')">Question</span>
+                  <span class="forum-tag" onclick="selectTag(this,'Experience')">Experience</span>
+                  <span class="forum-tag" onclick="selectTag(this,'Diet &amp; Lifestyle')">Diet &amp; Lifestyle</span>
+                  <span class="forum-tag" onclick="selectTag(this,'Medication')">Medication</span>
+                  <span class="forum-tag" onclick="selectTag(this,'Support')">Support</span>
+                </div>
+                <button class="btn-compute" style="margin-left:auto;" onclick="submitDbPost()">Post</button>
+              </div>
+            </div>
+            <div id="forum-posts-wrap">
+              <div class="empty-state"><div class="empty-icon">⏳</div><p>Loading posts…</p></div>
+            </div>
+          </div>
+          <div>
+            <div class="forum-sidebar-card">
+              <div class="forum-sidebar-title">Community Stats</div>
+              <div class="sidebar-stat"><span>Total posts</span><span class="val" id="stat-posts">0</span></div>
+              <div class="sidebar-stat"><span>Your posts</span><span class="val" id="stat-my-posts">0</span></div>
+            </div>
+            <div class="forum-sidebar-card" style="background:var(--hc-amber-light);border-color:#f9c94a;">
+              <div class="forum-sidebar-title" style="color:#7c4e00;">⚠️ Disclaimer</div>
+              <p style="font-size:.9rem;color:#7c4e00;line-height:1.6;">For peer support only. Always consult a qualified healthcare professional.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ EMERGENCY TAB ══ -->
+      <div id="ptab-emergency" style="display:none;">
+        <div class="page-header"><h2>Emergency Contacts</h2><p>Save your emergency contacts for quick access</p></div>
+        <div class="reports-actions"><button class="btn-compute" onclick="saveEmergency()">Save Contacts</button><button class="btn-danger" onclick="resetEmergency()">Reset</button></div>
+        <div class="emergency-grid">
+          <div class="emergency-section"><h3>👤 Contact 1</h3><div class="form-group"><label>Name</label><input type="text" id="em-c1n" placeholder="Spouse / Parent / Friend"></div><div class="form-group"><label>Phone</label><input type="text" id="em-c1p" placeholder="+91-XXXXXXXXXXX"></div></div>
+          <div class="emergency-section"><h3>👤 Contact 2</h3><div class="form-group"><label>Name</label><input type="text" id="em-c2n" placeholder="Spouse / Parent / Friend"></div><div class="form-group"><label>Phone</label><input type="text" id="em-c2p" placeholder="+91-XXXXXXXXXXX"></div></div>
+          <div class="emergency-section"><h3>🏥 Doctor / Clinic</h3><div class="form-group"><label>Name</label><input type="text" id="em-dn" placeholder="Dr. Name / Clinic"></div><div class="form-group"><label>Phone</label><input type="text" id="em-dp" placeholder="+91-XXXXXXXXXXX"></div></div>
+          <div class="emergency-section"><h3>🚑 Ambulance</h3><div class="form-group"><label>Number</label><input type="text" id="em-amb" placeholder="108"></div><div style="margin-top:1rem;"><div class="ambulance-badge">102 – National Ambulance</div><div class="ambulance-badge" style="margin-top:.5rem;">112 – Emergency</div></div></div>
+        </div>
+      </div>
+
+      <!-- ══ CONTACT TAB ══ -->
+      <div id="ptab-contact" style="display:none;">
+        <div class="page-header"><h2>Contact Us</h2><p>Reach out to the HepaCheck development team</p></div>
+        <div class="contact-card">
+          <div style="background:var(--hc-green-light);border-radius:var(--radius);padding:1.25rem;">
+            <p style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--hc-green);margin-bottom:.75rem;">Institutional Contact</p>
+            <p><strong>Khayati Bhrdwaj</strong><br><a href="mailto:khayati.bhrdwaj@s.amity.edu" style="color:var(--hc-blue);">khayati.bhrdwaj@s.amity.edu</a></p>
+            <hr class="contact-divider">
+            <p><strong>Dr. (Professor) Ritu Chauhan</strong><br><a href="mailto:rchauhan@amity.edu" style="color:var(--hc-blue);">rchauhan@amity.edu</a></p>
+            <p style="margin-top:.75rem;font-size:.88rem;color:var(--text-muted);">AI and IoT Lab · Amity University, Noida, India</p>
+          </div>
+          <div class="disclaimer-box"><p>⚠️ <strong>Medical Disclaimer:</strong> HepaCheck is a research-oriented platform. Always consult qualified healthcare professionals.</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   TAB NAVIGATION — definitive version
+   Handles active state correctly for all tabs including Contact.
+   "Choose Doctor" navigates away and is never marked active here.
+══════════════════════════════════════════════════════════════ */
+var _currentTab = 'home';
+
+function showPatientTab(tab) {
+  _currentTab = tab;
+
+  /* 1. Show/hide panels */
+  var tabs = ['home','scores','reports','info','community','emergency','contact'];
+  for (var i = 0; i < tabs.length; i++) {
+    var el = document.getElementById('ptab-' + tabs[i]);
+    if (el) el.style.display = (tabs[i] === tab) ? '' : 'none';
+  }
+
+  /* 2. Remove active from every nav item (including Choose Doctor) */
+  var links = document.querySelectorAll('#patient-nav .nav-link');
+  for (var j = 0; j < links.length; j++) {
+    links[j].classList.remove('active');
+    links[j].blur();
+  }
+
+  /* 3. Activate only the matching nav item */
+  var navMap = {
+    home: 'nav-home', scores: 'nav-scores', reports: 'nav-reports',
+    info: 'nav-info', community: 'nav-community',
+    emergency: 'nav-emergency', contact: 'nav-contact'
+  };
+  if (navMap[tab]) {
+    var target = document.getElementById(navMap[tab]);
+    if (target) target.classList.add('active');
+  }
+
+  /* 4. Tab-specific side effects */
+  if (tab === 'community') loadDbPosts();
+  if (tab === 'reports')   renderReports();
+}
+
+function goChooseDoctor() {
+  /* Navigate without marking Choose Doctor as active */
+  window.location.href = '/patient/choose-doctor';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DB-BACKED COMMUNITY FORUM
+   Posts come from the server (/patient/community/posts).
+   No fake/phantom posts. One like per user enforced server-side.
+══════════════════════════════════════════════════════════════ */
+var _selectedTag  = 'Question';
+var _postsCache   = [];
+
+function selectTag(el, tag) {
+  document.querySelectorAll('.forum-tag').forEach(function(t){ t.classList.remove('selected'); });
+  el.classList.add('selected');
+  _selectedTag = tag;
+}
+
+/* Submit post via hidden form → POST /patient/community/post */
+function submitDbPost() {
+  var text = (document.getElementById('forum-post-text') || {}).value;
+  if (!text || !text.trim()) { alert('Please write something before posting.'); return; }
+
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/patient/community/post';
+
+  var fBody = document.createElement('input');
+  fBody.type  = 'hidden'; fBody.name  = 'body'; fBody.value = text.trim();
+  var fTag  = document.createElement('input');
+  fTag.type  = 'hidden'; fTag.name  = 'tag';  fTag.value = _selectedTag;
+
+  form.appendChild(fBody);
+  form.appendChild(fTag);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* Submit reply via hidden form → POST /patient/community/reply */
+function submitDbReply(postId) {
+  var input = document.getElementById('reply-input-' + postId);
+  if (!input || !input.value.trim()) return;
+
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/patient/community/reply';
+
+  var fPost  = document.createElement('input');
+  fPost.type = 'hidden'; fPost.name = 'post_id'; fPost.value = postId;
+  var fBody  = document.createElement('input');
+  fBody.type = 'hidden'; fBody.name = 'body';    fBody.value = input.value.trim();
+
+  form.appendChild(fPost);
+  form.appendChild(fBody);
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/* Like / unlike → POST /patient/community/like/{id} */
+function toggleDbLike(postId) {
+  var form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/patient/community/like/' + postId;
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function toggleReplies(id) {
+  var el = document.getElementById('replies-' + id);
+  if (el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+function avatarColor(initials) {
+  var colors = ['#3d8b37','#0f766e','#1e40af','#7c3aed','#b45309','#be123c'];
+  var h = 0;
+  for (var i = 0; i < initials.length; i++) h += initials.charCodeAt(i);
+  return colors[h % colors.length];
+}
+
+function loadDbPosts() {
+  var wrap = document.getElementById('forum-posts-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>Loading…</p></div>';
+
+  fetch('/patient/community/posts')
+    .then(function(r){ return r.json(); })
+    .then(function(posts) {
+      _postsCache = posts;
+      var totalEl  = document.getElementById('stat-posts');
+      var myEl     = document.getElementById('stat-my-posts');
+      var myCount  = posts.filter(function(p){ return p.isOwn; }).length;
+      if (totalEl) totalEl.textContent = posts.length;
+      if (myEl)    myEl.textContent    = myCount;
+
+      if (posts.length === 0) {
+        wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>No posts yet. Be the first to share!</p></div>';
+        return;
+      }
+
+      wrap.innerHTML = posts.map(function(post) {
+        var initials = post.author.split(' ').map(function(w){ return w[0]||''; }).join('').toUpperCase().slice(0,2) || 'PT';
+        var likeLabel = post.liked ? ('❤ ' + post.likes + ' Liked') : ('🤍 ' + post.likes + ' Like');
+        var likeBtnStyle = post.liked ? 'color:var(--hc-red);font-weight:600;' : '';
+
+        var repliesHtml = post.replies.map(function(r) {
+          return '<div class="reply"><div class="reply-author">' + escHtml(r.author)
+               + ' <span style="font-size:.73rem;color:var(--text-muted);font-weight:400;">' + escHtml(r.time) + '</span></div>'
+               + escHtml(r.body) + '</div>';
+        }).join('');
+
+        return '<div class="forum-post" id="post-' + post.id + '">'
+          + '<div class="post-header">'
+          + '<div class="post-avatar" style="background:' + avatarColor(initials) + '">' + escHtml(initials) + '</div>'
+          + '<div class="post-meta">'
+          + '<div class="post-author">' + escHtml(post.author) + ' <span class="post-tag">' + escHtml(post.tag) + '</span>'
+          + (post.isOwn ? ' <span style="font-size:.68rem;background:var(--hc-green-light);color:var(--hc-green);padding:.1rem .4rem;border-radius:10px;font-weight:600;">You</span>' : '')
+          + '</div>'
+          + '<div class="post-time">' + escHtml(post.time) + '</div>'
+          + '</div></div>'
+          + '<div class="post-body">' + escHtml(post.body) + '</div>'
+          + '<div class="post-actions">'
+          + '<button class="post-action-btn" style="' + likeBtnStyle + '" onclick="toggleDbLike(' + post.id + ')">' + likeLabel + '</button>'
+          + '<button class="post-action-btn" onclick="toggleReplies(' + post.id + ')">💬 ' + post.replies.length + ' ' + (post.replies.length === 1 ? 'Reply' : 'Replies') + '</button>'
+          + '</div>'
+          + '<div class="post-replies" id="replies-' + post.id + '" style="display:none;">'
+          + repliesHtml
+          + '<div class="reply-input">'
+          + '<input type="text" placeholder="Write a reply…" id="reply-input-' + post.id + '">'
+          + '<button class="reply-submit" onclick="submitDbReply(' + post.id + ')">Reply</button>'
+          + '</div></div></div>';
+      }).join('');
+    })
+    .catch(function(err) {
+      if (wrap) wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load posts. Please try again.</p></div>';
+    });
+}
+
+/* Safe HTML escaping to prevent XSS */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   INITIALISE
+══════════════════════════════════════════════════════════════ */
+(function init() {
+  var hash = window.location.hash.replace('#', '');
+  var valid = ['home','scores','reports','info','community','emergency','contact'];
+  var tab   = (hash && valid.indexOf(hash) !== -1) ? hash : 'home';
+
+  function run() {
+    showPatientTab(tab);
+    if (document.getElementById('reports-table-wrap')) renderReports();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+</script>
+
+{% endblock %}

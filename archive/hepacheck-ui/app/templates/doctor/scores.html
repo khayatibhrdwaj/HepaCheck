@@ -1,0 +1,124 @@
+﻿{% extends "doctor/base_doctor.html" %}
+{% set page_title = "Scores" %}
+{% set active_page = "doctor_scores" %}
+
+{% block content %}
+<div class="hc-page-head">
+  <div>
+    <h1 class="hc-page-title">Clinical Score Calculator</h1>
+    <p class="hc-page-subtitle">Compute patient non-invasive risk scores using current input values.</p>
+  </div>
+</div>
+
+<div class="hc-card mb-4">
+  <div class="hc-card-title"><i class="bi bi-calculator-fill"></i> Compute Patient Risk Scores</div>
+  <div class="row g-3">
+    <div class="col-md-3"><label class="form-label">Age</label><input type="number" id="age" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">AST (U/L)</label><input type="number" id="ast" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">ALT (U/L)</label><input type="number" id="alt" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Platelets (×10⁹/L)</label><input type="number" id="platelets" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Albumin (g/dL)</label><input type="number" step="0.1" id="albumin" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">BMI (kg/m²)</label><input type="number" step="0.1" id="bmi" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Fasting Glucose (mg/dL)</label><input type="number" id="glucose" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Fasting Insulin (μU/mL)</label><input type="number" id="insulin" class="form-control"></div>
+    <div class="col-md-3 d-flex align-items-end">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="diabetes">
+        <label class="form-check-label" for="diabetes">Diabetes / IFG</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <button class="btn btn-hc-primary" onclick="computeScores()">Compute Scores</button>
+  </div>
+  <div id="score-error" class="mt-3 text-danger small" style="display:none;"></div>
+</div>
+
+<div class="hc-grid hc-grid-4">
+  <div class="score-card">
+    <div class="score-label">FIB-4</div>
+    <div class="score-value" id="val-fib4">—</div>
+    <div class="score-sub" id="sub-fib4"></div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">APRI</div>
+    <div class="score-value" id="val-apri">—</div>
+    <div class="score-sub" id="sub-apri"></div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">NFS</div>
+    <div class="score-value" id="val-nfs">—</div>
+    <div class="score-sub" id="sub-nfs"></div>
+  </div>
+  <div class="score-card">
+    <div class="score-label">HOMA-IR</div>
+    <div class="score-value" id="val-homa">—</div>
+    <div class="score-sub" id="sub-homa"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function fmt(v) {
+    return (v !== undefined && v !== null) ? Number(v).toFixed(2) : '—';
+  }
+
+  function renderRiskBadge(elementId, risk) {
+    const el = document.getElementById(elementId);
+    if (!risk || risk === 'Unavailable') {
+      el.textContent = '';
+      return;
+    }
+    let cls = 'risk-medium';
+    if (risk === 'Low') cls = 'risk-low';
+    if (risk === 'High') cls = 'risk-high';
+    el.innerHTML = `<span class="risk-badge ${cls}">${risk}</span>`;
+  }
+
+  async function computeScores() {
+    const payload = {
+      age: parseFloat(document.getElementById('age').value) || null,
+      ast: parseFloat(document.getElementById('ast').value) || null,
+      alt: parseFloat(document.getElementById('alt').value) || null,
+      platelets: parseFloat(document.getElementById('platelets').value) || null,
+      albumin: parseFloat(document.getElementById('albumin').value) || null,
+      bmi: parseFloat(document.getElementById('bmi').value) || null,
+      glucose: parseFloat(document.getElementById('glucose').value) || null,
+      insulin: parseFloat(document.getElementById('insulin').value) || null,
+      diabetes_or_ifg: document.getElementById('diabetes').checked
+    };
+
+    const errorBox = document.getElementById('score-error');
+    errorBox.style.display = 'none';
+    errorBox.textContent = '';
+
+    try {
+      const res = await fetch('/scores/compute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error('Request failed');
+
+      const d = await res.json();
+
+      document.getElementById('val-fib4').textContent = fmt(d.fib4_score);
+      document.getElementById('val-apri').textContent = fmt(d.apri_score);
+      document.getElementById('val-nfs').textContent = fmt(d.nfs_score);
+      document.getElementById('val-homa').textContent = fmt(d.homa_ir_score);
+
+      renderRiskBadge('sub-fib4', d.fib4_risk);
+      renderRiskBadge('sub-apri', d.apri_risk);
+      renderRiskBadge('sub-nfs', d.nfs_risk);
+      renderRiskBadge('sub-homa', d.homa_ir_risk);
+
+    } catch (e) {
+      errorBox.textContent = 'Error computing scores.';
+      errorBox.style.display = 'block';
+    }
+  }
+</script>
+{% endblock %}

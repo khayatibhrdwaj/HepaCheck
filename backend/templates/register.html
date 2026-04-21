@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div id="page-register" class="page active">
+  <div class="login-wrap" style="padding:2rem 1rem;">
+    <div class="login-card" style="max-width:520px;">
+
+      <div class="login-logo">
+        <img src="/static/images/logo.png" alt="HepaCheck"
+             style="height:80px;object-fit:contain;margin-bottom:.5rem;">
+      </div>
+
+      {% if error %}
+      <div class="login-error" style="display:block;">&#9888; {{ error }}</div>
+      {% endif %}
+
+      <h3 style="text-align:center;margin-bottom:1.25rem;font-family:'DM Serif Display',serif;font-size:1.6rem;">
+        Create your account
+      </h3>
+
+      <!-- Role toggle -->
+      <div style="margin-bottom:1.5rem;">
+        <label style="font-size:.82rem;font-weight:700;color:var(--text-muted);
+                      text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:.6rem;">
+          I am registering as
+        </label>
+        <div class="role-selector" style="margin-bottom:0;">
+          <button type="button" class="role-btn active" id="toggle-patient"
+                  onclick="switchRegisterRole('patient')">
+            <img src="/static/images/Patient.png" alt="" style="height:28px;margin-bottom:4px;">
+            <span>Patient</span>
+          </button>
+          <button type="button" class="role-btn" id="toggle-doctor"
+                  onclick="switchRegisterRole('doctor')">
+            <img src="/static/images/Doctor.png" alt="" style="height:28px;margin-bottom:4px;">
+            <span>Doctor</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Hidden data attribute carries the prefill role so JS can read it safely -->
+      <div id="register-config"
+           data-prefill-role="{{ prefill.role if prefill and prefill.role else 'patient' }}"
+           style="display:none;"></div>
+
+      <!-- Patient form -->
+      <form method="post" action="/register/patient" id="form-patient">
+        <input type="hidden" name="role" value="patient">
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="yourname" required
+                 value="{{ prefill.username if prefill else '' }}">
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" name="email" placeholder="you@example.com" required
+                 value="{{ prefill.email if prefill else '' }}">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" required minlength="6">
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:.5rem;">
+          Create Patient Account
+        </button>
+      </form>
+
+      <!-- Doctor form -->
+      <form method="post" action="/register/doctor" id="form-doctor" style="display:none;">
+        <input type="hidden" name="role" value="doctor">
+
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="yourname"
+                 value="{{ prefill.username if prefill else '' }}">
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" name="email" placeholder="you@example.com"
+                 value="{{ prefill.email if prefill else '' }}">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" minlength="6">
+        </div>
+
+        <!-- Professional details divider -->
+        <div style="display:flex;align-items:center;gap:.75rem;margin:1.25rem 0 1rem;">
+          <div style="flex:1;border-top:1.5px solid var(--border);"></div>
+          <span style="font-size:.75rem;font-weight:700;color:var(--text-muted);
+                       text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;">
+            Professional Details
+          </span>
+          <div style="flex:1;border-top:1.5px solid var(--border);"></div>
+        </div>
+
+        <div class="form-group">
+          <label>Medical Licence Number <span style="color:var(--hc-red);">*</span></label>
+          <input type="text" name="medical_licence" placeholder="e.g. MCI-12345"
+                 value="{{ prefill.medical_licence if prefill else '' }}">
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem;">
+          <div class="form-group">
+            <label>Highest Degree <span style="color:var(--hc-red);">*</span></label>
+            <select name="highest_degree">
+              {% set deg = prefill.highest_degree if prefill else '' %}
+              <option value="" {% if not deg %}selected{% endif %} disabled>Select...</option>
+              {% for d in ['MBBS','MD','DM','MCh','MS','DNB','PhD','Other'] %}
+              <option value="{{ d }}" {% if deg == d %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Years Practicing <span style="color:var(--hc-red);">*</span></label>
+            <input type="number" name="years_practicing" placeholder="e.g. 8"
+                   min="0" max="60"
+                   value="{{ prefill.years_practicing if prefill else '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Specialisation <span style="color:var(--hc-red);">*</span></label>
+          <select name="specialisation">
+            {% set spec = prefill.specialisation if prefill else '' %}
+            <option value="" {% if not spec %}selected{% endif %} disabled>Select...</option>
+            {% for s in ['Hepatology','Gastroenterology','Internal Medicine',
+                         'General Physician','Endocrinology','Oncology','Other'] %}
+            <option value="{{ s }}" {% if spec == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem;">
+          <div class="form-group">
+            <label>Clinic / Hospital</label>
+            <input type="text" name="clinic_hospital" placeholder="e.g. Apollo Delhi"
+                   value="{{ prefill.clinic_hospital if prefill else '' }}">
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" name="city" placeholder="e.g. Mumbai"
+                   value="{{ prefill.city if prefill else '' }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Short Bio
+            <span style="font-weight:400;color:var(--text-muted);">(optional)</span>
+          </label>
+          <textarea name="bio" rows="3"
+                    placeholder="Brief professional background patients will see..."
+                    style="width:100%;padding:.7rem 1rem;border:1.5px solid var(--border);
+                           border-radius:var(--radius);font-family:inherit;font-size:.9rem;
+                           resize:vertical;outline:none;">{{ prefill.bio if prefill else '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn-primary" style="margin-top:.5rem;">
+          Create Doctor Account
+        </button>
+      </form>
+
+      <p style="text-align:center;margin-top:1rem;font-size:.85rem;color:var(--text-muted);">
+        Already have an account?
+        <a href="/login" style="color:var(--hc-green);font-weight:600;">Sign in</a>
+      </p>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function switchRegisterRole(role) {
+  var isDoctor = role === 'doctor';
+
+  document.getElementById('toggle-patient').classList.toggle('active', !isDoctor);
+  document.getElementById('toggle-doctor').classList.toggle('active', isDoctor);
+
+  document.getElementById('form-patient').style.display = isDoctor ? 'none' : '';
+  document.getElementById('form-doctor').style.display  = isDoctor ? ''     : 'none';
+
+  // Manage required attributes so browser validation only fires on the visible form
+  var patientFields = document.querySelectorAll('#form-patient input, #form-patient select');
+  for (var i = 0; i < patientFields.length; i++) {
+    if (isDoctor) {
+      patientFields[i].removeAttribute('required');
+    } else {
+      var t = patientFields[i].getAttribute('type');
+      if (t === 'text' || t === 'email' || t === 'password') {
+        patientFields[i].setAttribute('required', '');
+      }
+    }
+  }
+
+  var doctorRequired = ['medical_licence', 'years_practicing', 'specialisation', 'highest_degree',
+                        'username', 'email', 'password'];
+  var doctorFields = document.querySelectorAll('#form-doctor input, #form-doctor select');
+  for (var j = 0; j < doctorFields.length; j++) {
+    var fieldName = doctorFields[j].getAttribute('name');
+    if (doctorRequired.indexOf(fieldName) !== -1) {
+      if (isDoctor) {
+        doctorFields[j].setAttribute('required', '');
+      } else {
+        doctorFields[j].removeAttribute('required');
+      }
+    }
+  }
+}
+
+// On page load: read prefill role from data attribute (set by Jinja, read by JS — no Jinja in script)
+(function() {
+  var config = document.getElementById('register-config');
+  var prefillRole = config ? config.getAttribute('data-prefill-role') : 'patient';
+  switchRegisterRole(prefillRole);
+})();
+</script>
+
+{% endblock %}
