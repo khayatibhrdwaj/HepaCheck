@@ -10,7 +10,14 @@ import os
 from app.database import get_db, User, DoctorProfile
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+import os
+from fastapi.templating import Jinja2Templates
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+templates = Jinja2Templates(
+    directory=os.path.join(BASE_DIR, "..", "templates")
+)
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "hepacheck-dev-secret-change-in-prod")
