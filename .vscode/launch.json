@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "HepaCheck (Backend + Frontend)",
+      "configurations": ["HepaCheck API (uvicorn)", "HepaCheck UI (vite)"]
+    }
+  ],
+  "configurations": [
+    {
+      "name": "HepaCheck API (uvicorn)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["backend.app:app", "--reload"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "HepaCheck UI (vite)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}/hepacheck-ui",
+      "console": "integratedTerminal"
+    }
+  ]
+}
