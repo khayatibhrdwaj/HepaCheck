@@ -5,7 +5,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
-DATABASE_URL = "sqlite:///./hepacheck.db"
+import os as _os
+_DB_DIR = _os.path.dirname(_os.path.abspath(__file__))
+DATABASE_URL = "sqlite:///" + _os.path.join(_DB_DIR, "hepacheck.db")
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

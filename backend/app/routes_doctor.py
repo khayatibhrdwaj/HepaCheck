@@ -7,7 +7,9 @@ from app.database import get_db, User, Entry, Flag, Notification, PatientDoctor
 from app.auth import require_role
 
 router = APIRouter(prefix="/doctor")
-templates = Jinja2Templates(directory="templates")
+import os as _os
+BASE_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+templates = Jinja2Templates(directory=_os.path.join(BASE_DIR, "templates"))
 
 
 def _get_doctor(request: Request, db: Session) -> User:

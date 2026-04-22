@@ -12,7 +12,9 @@ from app.database import (
 from app.auth import require_role
 
 router = APIRouter(prefix="/patient")
-templates = Jinja2Templates(directory="templates")
+import os as _os
+BASE_DIR = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
+templates = Jinja2Templates(directory=_os.path.join(BASE_DIR, "templates"))
 
 
 def _get_patient(request: Request, db: Session) -> User:
@@ -266,14 +268,15 @@ async def community_like(post_id: int, request: Request, db: Session = Depends(g
 
     if existing:
         db.delete(existing)   # toggle off
-        db.commit()
     else:
         try:
             db.add(PostLike(post_id=post_id, user_id=patient.id))
             db.commit()
         except IntegrityError:
             db.rollback()     # race-condition safeguard
+        return RedirectResponse("/patient/home#community", status_code=303)
 
+    db.commit()
     return RedirectResponse("/patient/home#community", status_code=303)
 
 

@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -8,9 +9,16 @@ from app.routes_auth import router as auth_router
 from app.routes_patient import router as patient_router
 from app.routes_doctor import router as doctor_router
 
+# Absolute base directory — works on Render regardless of working directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = FastAPI(title="HepaCheck")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(BASE_DIR, "static")),
+    name="static",
+)
 
 app.include_router(auth_router)
 app.include_router(patient_router)

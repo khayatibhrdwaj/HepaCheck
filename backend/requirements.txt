@@ -7,5 +7,4 @@ passlib[bcrypt]
 python-jose[cryptography]
 itsdangerous
 pydantic-settings
-gunicorn
 flask
