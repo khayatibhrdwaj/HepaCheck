@@ -266,15 +266,14 @@ async def community_like(post_id: int, request: Request, db: Session = Depends(g
 
     if existing:
         db.delete(existing)   # toggle off
+        db.commit()
     else:
         try:
             db.add(PostLike(post_id=post_id, user_id=patient.id))
             db.commit()
         except IntegrityError:
             db.rollback()     # race-condition safeguard
-        return RedirectResponse("/patient/home#community", status_code=303)
 
-    db.commit()
     return RedirectResponse("/patient/home#community", status_code=303)
 
 

@@ -662,16 +662,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /* Patient page */
   if (document.getElementById('patient-nav')) {
-    /* Strip active + focus from Choose Doctor unconditionally */
-    var cd = document.getElementById('nav-choose-doctor');
-    if (cd) { cd.classList.remove('active'); cd.blur(); }
+    /* On the choose-doctor page the active nav highlight is set in HTML —
+       skip tab switching so we don't strip it. */
+    var isChooseDoctor = window.location.pathname.indexOf('choose-doctor') !== -1;
+    if (!isChooseDoctor) {
+      /* Strip active + focus from Choose Doctor when on patient/home */
+      var cd = document.getElementById('nav-choose-doctor');
+      if (cd) { cd.classList.remove('active'); cd.blur(); }
 
-    /* Restore tab from URL hash */
-    var hash = window.location.hash.replace('#', '');
-    var validTabs = ['home','scores','reports','info','community','emergency','contact'];
-    if (hash && validTabs.indexOf(hash) !== -1) {
-      showPatientTab(hash);
+      /* Restore tab from URL hash, default to 'home' */
+      var hash = window.location.hash.replace('#', '');
+      var validTabs = ['home','scores','reports','info','community','emergency','contact'];
+      if (hash && validTabs.indexOf(hash) !== -1) {
+        showPatientTab(hash);
+      } else {
+        showPatientTab('home');
+      }
+      if (document.getElementById('reports-table-wrap')) renderReports();
     }
-    if (document.getElementById('reports-table-wrap')) renderReports();
   }
 });
